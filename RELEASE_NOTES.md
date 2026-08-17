@@ -18,21 +18,21 @@
 
 请求链路、图片能力判断、429 重试和 Sidecar 热交接：
 
-![请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex-patch-flow.svg?raw=true)
+![请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
 
 账号额度与成本统计界面：
 
-![账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_list.png?raw=true)
+![账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_list.png)
 
 多实例账号管理界面：
 
-![多实例](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_instances.png?raw=true)
+![多实例](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_instances.png)
 
 实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
 
-![额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_accounts_quota_private-masked.png?raw=true)
+![额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_accounts_quota_private-masked.png)
 
-![API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_api_usage_private-masked.png?raw=true)
+![API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_api_usage_private-masked.png)
 
 ## Windows 下载
 

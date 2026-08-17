@@ -22,19 +22,19 @@
 
 请求链路和增强点如下：
 
-![Codex API 增强请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex-patch-flow.svg?raw=true)
+![Codex API 增强请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
 
 账号额度与多实例管理界面示例：
 
-![Codex 账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_list.png?raw=true)
+![Codex 账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_list.png)
 
-![Codex 多实例](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_instances.png?raw=true)
+![Codex 多实例](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_instances.png)
 
 实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
 
-![Codex 额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_accounts_quota_private-masked.png?raw=true)
+![Codex 额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_accounts_quota_private-masked.png)
 
-![Codex API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_api_usage_private-masked.png?raw=true)
+![Codex API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_api_usage_private-masked.png)
 
 ## Windows 安装
 

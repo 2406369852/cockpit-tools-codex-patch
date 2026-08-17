@@ -18,11 +18,11 @@ This release does not force-expose WM / `gpt-5.6-sol-wm`. Image permissions, acc
 
 ## Visual guide
 
-![Codex API enhancement flow](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex-patch-flow.svg?raw=true)
+![Codex API enhancement flow](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
 
-![Codex account quota view](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_list.png?raw=true)
+![Codex account quota view](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_list.png)
 
-![Codex multi-instance view](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_instances.png?raw=true)
+![Codex multi-instance view](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_instances.png)
 
 ## Install and build
 
