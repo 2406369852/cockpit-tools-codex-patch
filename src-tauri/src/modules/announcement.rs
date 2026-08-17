@@ -8,7 +8,7 @@ use super::config;
 use super::logger;
 
 const ANNOUNCEMENT_URL: &str =
-    "https://raw.githubusercontent.com/jlcodes99/cockpit-tools/main/announcements.json";
+    "https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/announcements.json";
 const ANNOUNCEMENT_CACHE_FILE: &str = "announcement_cache.json";
 const ANNOUNCEMENT_FORCE_REFRESH_ATTEMPTS_FILE: &str =
     "announcement_force_refresh_attempt_versions.json";

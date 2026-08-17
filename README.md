@@ -4,6 +4,8 @@
 
 本项目不是 OpenAI 官方产品，也不代表上游作者。上游的多平台账号管理能力仍然保留；本分支的重点变更记录在 [PATCH_NOTES.md](PATCH_NOTES.md)。
 
+想按截图逐项了解改动，请阅读[中文图文功能说明](docs/FEATURE_GUIDE.zh-CN.md)。
+
 ## 主要功能
 
 - Codex 本地 OpenAI 兼容 API，支持 `/v1/responses`、`/v1/chat/completions`、图片生成和图片编辑。
