@@ -2867,13 +2867,13 @@ mod tests {
     #[test]
     fn build_payload_from_snapshot_supports_kiro_raw_json_shape() {
         let auth_token = json!({
-            "email": "3493729266@qq.com",
+            "email": "test@example.com",
             "accessToken": "test_access_token",
             "refreshToken": "test_refresh_token",
             "expiresAt": "2026/02/19 02:01:47",
             "provider": "Github",
             "userId": "user-123",
-            "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
+            "profileArn": "arn:aws:codewhisperer:us-east-1:000000000000:profile/TESTPROFILE"
         });
         let usage = json!({
             "nextDateReset": 1772323200,
@@ -2893,7 +2893,7 @@ mod tests {
                 }
             ],
             "userInfo": {
-                "email": "3493729266@qq.com",
+                "email": "test@example.com",
                 "userId": "user-123"
             }
         });
@@ -2907,7 +2907,7 @@ mod tests {
                 .and_utc()
                 .timestamp();
 
-        assert_eq!(payload.email, "3493729266@qq.com");
+        assert_eq!(payload.email, "test@example.com");
         assert_eq!(payload.user_id.as_deref(), Some("user-123"));
         assert_eq!(payload.login_provider.as_deref(), Some("Github"));
         assert_eq!(payload.access_token, "test_access_token");

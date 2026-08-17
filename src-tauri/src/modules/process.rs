@@ -13200,7 +13200,7 @@ mod legacy_platform_adapter_cleanup_tests {
 
     #[test]
     fn matches_orphaned_legacy_platform_adapter() {
-        let line = " 1359     1 /Users/jieli/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
+        let line = " 1359     1 /Users/demo/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
         assert_eq!(
             orphaned_legacy_platform_adapter_pid_from_ps_line(line, 99999),
             Some(1359)
@@ -13209,13 +13209,13 @@ mod legacy_platform_adapter_cleanup_tests {
 
     #[test]
     fn ignores_non_orphaned_or_current_processes() {
-        let line = " 1359 1805 /Users/jieli/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
+        let line = " 1359 1805 /Users/demo/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
         assert_eq!(
             orphaned_legacy_platform_adapter_pid_from_ps_line(line, 99999),
             None
         );
 
-        let current_line = " 1359 1 /Users/jieli/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
+        let current_line = " 1359 1 /Users/demo/.antigravity_cockpit/platform-packages/codex/current/adapter/macos/cockpit-codex-adapter";
         assert_eq!(
             orphaned_legacy_platform_adapter_pid_from_ps_line(current_line, 1359),
             None
@@ -13515,10 +13515,10 @@ mod tests {
 
     #[test]
     fn trae_windows_scan_candidates_match_exact_platform_dirs() {
-        let trae = Path::new(r"D:\Users\李杰\AppData\Local\Programs\Trae\Trae.exe");
-        let trae_cn = Path::new(r"D:\Users\李杰\AppData\Local\Programs\Trae CN\Trae CN.exe");
+        let trae = Path::new(r"D:\Users\demo\AppData\Local\Programs\Trae\Trae.exe");
+        let trae_cn = Path::new(r"D:\Users\demo\AppData\Local\Programs\Trae CN\Trae CN.exe");
         let solo_cn =
-            Path::new(r"D:\Users\李杰\AppData\Local\Programs\TRAE SOLO CN\TRAE SOLO CN.exe");
+            Path::new(r"D:\Users\demo\AppData\Local\Programs\TRAE SOLO CN\TRAE SOLO CN.exe");
 
         assert!(windows_trae_candidate_matches_platform(
             trae,

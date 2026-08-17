@@ -8895,14 +8895,14 @@ mod tests {
         let snapshot_id = "claude_desktop_0b1d3d4df02c2376d62a623bb8c67332";
         assert_eq!(
             desktop_profile_snapshot_id_from_path(Path::new(
-                r"C:\Users\Lenovo\.antigravity_cockpit\claude_desktop_profiles\claude_desktop_0b1d3d4df02c2376d62a623bb8c67332"
+                r"C:\Users\demo\.antigravity_cockpit\claude_desktop_profiles\claude_desktop_0b1d3d4df02c2376d62a623bb8c67332"
             ))
             .as_deref(),
             Some(snapshot_id)
         );
         assert_eq!(
             desktop_profile_snapshot_id_from_path(Path::new(
-                r"C:\Users\Lenovo.antigravity_cockpit\claude_desktop_profiles\claude_desktop_0b1d3d4df02c2376d62a623bb8c67332"
+                r"C:\Users\demo.antigravity_cockpit\claude_desktop_profiles\claude_desktop_0b1d3d4df02c2376d62a623bb8c67332"
             ))
             .as_deref(),
             Some(snapshot_id)

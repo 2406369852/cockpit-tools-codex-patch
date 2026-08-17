@@ -5584,9 +5584,9 @@ mod tests {
     fn sample_account() -> TraeAccount {
         TraeAccount {
             id: "trae_test".to_string(),
-            email: "lijie769328281@gmail.com".to_string(),
-            user_id: Some("7463021402682639361".to_string()),
-            nickname: Some("李杰".to_string()),
+            email: "test@example.com".to_string(),
+            user_id: Some("test-user-id".to_string()),
+            nickname: Some("Test User".to_string()),
             tags: None,
             access_token: "old-access".to_string(),
             refresh_token: Some("old-refresh".to_string()),
@@ -5597,9 +5597,9 @@ mod tests {
             trae_auth_raw: None,
             trae_profile_raw: Some(serde_json::json!({
                 "Result": {
-                    "ScreenName": "李杰",
-                    "NonPlainTextEmail": "lijie769328281@gmail.com",
-                    "UserID": "7463021402682639361",
+                    "ScreenName": "Test User",
+                    "NonPlainTextEmail": "test@example.com",
+                    "UserID": "test-user-id",
                     "AvatarUrl": "https://example.com/avatar.png",
                     "Description": "",
                     "StoreCountry": "jp",
@@ -5661,7 +5661,7 @@ mod tests {
             "refreshExpiredAt": "2026-10-09T16:18:22.466Z",
             "tokenReleaseAt": "2026-04-12T16:18:25.030Z",
             "account": {
-                "username": "李杰"
+                "username": "Test User"
             }
         }));
 
@@ -5714,7 +5714,7 @@ mod tests {
                 .get("account")
                 .and_then(|value| value.get("username"))
                 .and_then(Value::as_str),
-            Some("李杰")
+            Some("Test User")
         );
     }
 
@@ -5982,7 +5982,7 @@ mod tests {
                 .get("account")
                 .and_then(|value| value.get("username"))
                 .and_then(Value::as_str),
-            Some("李杰")
+            Some("Test User")
         );
     }
 
