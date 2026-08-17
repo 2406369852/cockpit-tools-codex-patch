@@ -14,6 +14,20 @@
 
 完整的图片+文字说明见 [`docs/FEATURE_GUIDE.zh-CN.md`](docs/FEATURE_GUIDE.zh-CN.md)。
 
+## 图文预览
+
+请求链路、图片能力判断、429 重试和 Sidecar 热交接：
+
+![请求链路](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex-patch-flow.svg)
+
+账号额度与成本统计界面：
+
+![账号额度](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex_list.png)
+
+多实例账号管理界面：
+
+![多实例](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex_instances.png)
+
 ## Windows 下载
 
 文件：`Cockpit Tools_1.3.21_x64-setup.exe`
