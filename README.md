@@ -32,7 +32,7 @@
 
 ## Windows 安装
 
-在 [Releases](../../releases) 下载 `Cockpit Tools_1.3.21_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。
+在 [Releases](../../releases) 下载 `Cockpit.Tools_1.3.21_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。
 
 首次更新前建议备份：
 

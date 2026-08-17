@@ -30,7 +30,7 @@
 
 ## Windows 下载
 
-文件：`Cockpit Tools_1.3.21_x64-setup.exe`
+文件：`Cockpit.Tools_1.3.21_x64-setup.exe`
 
 SHA256：
 
