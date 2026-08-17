@@ -1,0 +1,306 @@
+/* Same-row cards stretch to equal height (Codex-style coordinated layout). */
+.grok-accounts-page .ghcp-accounts-grid {
+  align-items: stretch;
+}
+
+.grok-accounts-page .ghcp-account-card {
+  width: 100%;
+  height: 100%;
+}
+
+.grok-accounts-page .ghcp-quota-section {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.grok-accounts-page .ghcp-account-card .card-footer {
+  margin-top: auto;
+}
+
+.grok-accounts-page .tier-badge {
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-control {
+  width: 100%;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 3px;
+  width: 100%;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--bg-tertiary);
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-mode {
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: none;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-mode:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-mode.active {
+  border-color: color-mix(in srgb, var(--primary) 56%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--primary) 18%, var(--bg-secondary)),
+    color-mix(in srgb, #0f9fa8 12%, var(--bg-secondary))
+  );
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-field > label {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-field .form-input {
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 9px;
+  background: var(--bg-tertiary);
+  font-size: 13px;
+}
+
+.grok-accounts-page-add-modal .grok-api-provider-field .form-input.error {
+  border-color: var(--danger);
+}
+
+.grok-accounts-page-add-modal .grok-api-field-error {
+  color: var(--danger);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+@media (max-width: 720px) {
+  .grok-accounts-page-add-modal .grok-api-provider-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Claude-style flat quota bars on account overview */
+.grok-accounts-page .grok-quota-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.grok-accounts-page .grok-quota-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.grok-accounts-page .grok-quota-summary.card .quota-item {
+  gap: 6px;
+}
+
+.grok-accounts-page .grok-quota-summary.card .quota-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.grok-accounts-page .grok-quota-summary.card .quota-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.grok-accounts-page .grok-quota-summary.card .quota-pct,
+.grok-accounts-page .grok-quota-summary.table .quota-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.grok-accounts-page .grok-quota-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.grok-accounts-page .grok-quota-pct-sep {
+  opacity: 0.55;
+  font-weight: 500;
+}
+
+.grok-accounts-page .grok-quota-summary.card .quota-reset {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.grok-accounts-page .grok-quota-summary.table .quota-item {
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.grok-accounts-page .grok-table-usage {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+}
+
+.grok-accounts-page .quota-error-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 6px;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.3;
+}
+
+.grok-accounts-page .quota-error-inline > span {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grok-accounts-page .quota-error-inline.table {
+  margin-bottom: 8px;
+}
+
+.grok-accounts-page .quota-error-inline .quota-error-action {
+  min-height: 24px;
+  flex: 0 0 auto;
+  padding: 3px 8px;
+  gap: 4px;
+  border-radius: 6px;
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.grok-accounts-page .oauth-reauthorization-target {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.grok-accounts-page .oauth-reauthorization-target strong {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-primary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.grok-accounts-page .grok-launch-working-dir-row,
+.grok-launch-modal .grok-launch-working-dir-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.grok-accounts-page .grok-launch-working-dir-row .form-input,
+.grok-launch-modal .grok-launch-working-dir-row .form-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.grok-accounts-page .grok-cli-install-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+
+.grok-accounts-page .grok-cli-install-command {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.grok-accounts-page .grok-cli-install-command code {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--bg-primary);
+  font-size: 12px;
+}
+
+.grok-accounts-page .grok-cli-install-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.grok-accounts-page .grok-cli-install-terminal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}

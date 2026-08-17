@@ -1,0 +1,1006 @@
+name: 📦 Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-release:
+    name: 📝 Prepare Staged Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      version: ${{ steps.app_version.outputs.VERSION }}
+    env:
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: 🔍 Validate release ref
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        shell: bash
+        run: |
+          echo "Release runs must target a v* tag; received ${GITHUB_REF}."
+          exit 1
+
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📖 Read app version
+        id: app_version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(node -e "console.log(require(require('path').join(process.env.GITHUB_WORKSPACE, 'package.json')).version)")"
+          echo "VERSION=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: 🔍 Validate tag matches version
+        shell: bash
+        run: |
+          set -euo pipefail
+          EXPECTED_TAG="v${{ steps.app_version.outputs.VERSION }}"
+          if [ "${GITHUB_REF_NAME}" != "${EXPECTED_TAG}" ]; then
+            echo "Tag (${GITHUB_REF_NAME}) does not match package.json version (${EXPECTED_TAG})."
+            exit 1
+          fi
+
+      - name: 📝 Build bilingual release notes from changelog
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.app_version.outputs.VERSION }}"
+
+          extract_section() {
+            local file="$1"
+            local version="$2"
+
+            awk -v version="$version" '
+              BEGIN {
+                capture = 0
+                found = 0
+              }
+
+              /^## / {
+                if (capture) {
+                  exit
+                }
+                if ($0 ~ ("^## \\[" version "\\][[:space:]]*-.*$") || $0 ~ ("^## \\[v" version "\\][[:space:]]*-.*$")) {
+                  capture = 1
+                  found = 1
+                }
+              }
+
+              capture {
+                if ($0 ~ /^---[[:space:]]*$/) {
+                  exit
+                }
+                print
+              }
+
+              END {
+                if (!found) {
+                  exit 2
+                }
+              }
+            ' "$file"
+          }
+
+          if ! zh_section="$(extract_section CHANGELOG.zh-CN.md "$VERSION")"; then
+            echo "Missing changelog section for version $VERSION in CHANGELOG.zh-CN.md"
+            exit 1
+          fi
+
+          if ! en_section="$(extract_section CHANGELOG.md "$VERSION")"; then
+            echo "Missing changelog section for version $VERSION in CHANGELOG.md"
+            exit 1
+          fi
+
+          {
+            echo "## 更新日志（中文）"
+            echo
+            printf '%s\n' "$zh_section"
+            echo
+            echo "## Changelog (English)"
+            echo
+            printf '%s\n' "$en_section"
+          } > release-notes.md
+
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > published-at.txt
+
+      - name: 💾 Preserve previous legacy latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PREVIOUS_TAG="$(
+            gh release list \
+              --limit 100 \
+              --json tagName,isDraft,isPrerelease \
+              --jq "[.[] | select(.isDraft == false and .isPrerelease == false and .tagName != \"${GITHUB_REF_NAME}\")][0].tagName // \"\""
+          )"
+          if [ -z "${PREVIOUS_TAG}" ]; then
+            echo "No previous published release was found; refusing to stage without a legacy updater manifest."
+            exit 1
+          fi
+
+          mkdir -p previous-release
+          gh release download "${PREVIOUS_TAG}" \
+            --pattern "latest.json" \
+            --dir previous-release \
+            --clobber
+          test -s previous-release/latest.json
+          cp previous-release/latest.json legacy-latest.json
+          echo "Preserved legacy latest.json from ${PREVIOUS_TAG}"
+
+      # Publish the release early (with previous complete latest.json) so parallel
+      # platform jobs can verify assets via public tag download URLs without
+      # waiting for Windows, and without reading the previous release's
+      # same-named target manifests through /releases/latest/.
+      - name: 🚀 Create or update staged release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${{ steps.app_version.outputs.VERSION }}"
+          TITLE="Cockpit Tools v${{ steps.app_version.outputs.VERSION }}"
+          if gh release view "${TAG}" > /dev/null 2>&1; then
+            gh release edit "${TAG}" \
+              --title "${TITLE}" \
+              --notes-file release-notes.md
+          else
+            gh release create "${TAG}" \
+              --draft \
+              --title "${TITLE}" \
+              --notes-file release-notes.md
+          fi
+
+          IS_DRAFT="$(gh release view "${TAG}" --json isDraft --jq '.isDraft')"
+          if [ "${IS_DRAFT}" = "true" ]; then
+            cp legacy-latest.json latest.json
+            gh release upload "${TAG}" latest.json --clobber
+            gh release edit "${TAG}" --draft=false --prerelease=false --latest
+            echo "Published staged release ${TAG} with legacy latest.json"
+          else
+            # Re-run after a prior publish: do not clobber a finalized latest.json.
+            echo "Release ${TAG} is already published; leaving latest.json as-is"
+            gh release edit "${TAG}" --prerelease=false --latest
+          fi
+
+      - name: 📤 Upload release metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-metadata
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            release-notes.md
+            published-at.txt
+            legacy-latest.json
+
+  build-windows:
+    name: "🏗️ Build: Windows"
+    needs: prepare-release
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🦀 Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          key: windows-release
+
+      - name: 🐹 Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install frontend dependencies
+        run: npm install
+
+      - name: 🔄 Sync versions
+        run: npm run sync-version
+
+      - name: 💾 Cache Tauri tooling
+        uses: actions/cache@v4
+        with:
+          path: C:\Users\runneradmin\AppData\Local\tauri
+          key: tauri-deps-windows-latest-${{ hashFiles('package-lock.json', '**/Cargo.toml') }}
+          restore-keys: |
+            tauri-deps-windows-latest-
+
+      - name: 🏗️ Build Windows app
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --ci
+
+      - name: 📥 Download release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: 📦 Stage Windows release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/stage_release_assets.cjs \
+            --platform windows \
+            --assets-dir "target/release/bundle" \
+            --output-dir "release-assets"
+
+      - name: 📤 Upload Windows release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          shopt -s nullglob
+          ASSETS=(release-assets/*)
+          test "${#ASSETS[@]}" -gt 0
+          gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          echo "Uploaded ${#ASSETS[@]} Windows assets"
+
+      - name: 📤 Build and upload Windows updater manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/build_target_latest_json.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --assets-dir "release-assets" \
+            --notes-file "release-metadata/release-notes.md" \
+            --published-at "$(cat release-metadata/published-at.txt)" \
+            --targets "windows-x86_64-msi,windows-x86_64-nsis" \
+            --output-dir "target-manifests"
+          gh release upload "v${VERSION}" target-manifests/*.json --clobber
+
+      # Fallback only: prepare should already have published with legacy latest.json.
+      - name: 🚀 Ensure staged release is published
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          IS_DRAFT="$(gh release view "${TAG}" --json isDraft --jq '.isDraft')"
+          if [ "${IS_DRAFT}" = "true" ]; then
+            cp release-metadata/legacy-latest.json latest.json
+            gh release upload "${TAG}" latest.json --clobber
+            gh release edit "${TAG}" --draft=false --prerelease=false --latest
+            echo "Published staged release from Windows fallback with legacy latest.json"
+          else
+            echo "Release is already published; keeping its current latest.json"
+          fi
+
+      # Mid-stage verify uses the tag download URL so parallel jobs do not race
+      # on /releases/latest/ before this release is marked latest (or before
+      # other platforms finish). Public /latest/ is checked in finalize.
+      - name: 🔍 Verify published Windows updater manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/verify_published_updater_manifests.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --targets "windows-x86_64-msi,windows-x86_64-nsis" \
+            --latest-base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}"
+
+  build-macos-aarch64:
+    name: "🏗️ Build: macOS Apple Silicon"
+    # Parallel with Windows / macOS Intel after prepare (no hard platform deps).
+    needs:
+      - prepare-release
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: 🦀 Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          key: macos-aarch64-release
+
+      - name: 🐹 Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install frontend dependencies
+        run: npm install
+
+      - name: 🔄 Sync versions
+        run: npm run sync-version
+
+      - name: 💾 Cache Tauri tooling
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/tauri
+          key: tauri-deps-macos-latest-aarch64-${{ hashFiles('package-lock.json', '**/Cargo.toml') }}
+          restore-keys: |
+            tauri-deps-macos-latest-aarch64-
+
+      - name: 🏗️ Build macOS Apple Silicon app
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --ci --target aarch64-apple-darwin
+
+      - name: 📥 Download release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: 📦 Stage macOS Apple Silicon assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/stage_release_assets.cjs \
+            --platform macos \
+            --mac-arch aarch64 \
+            --assets-dir "target/aarch64-apple-darwin/release/bundle" \
+            --output-dir "release-assets"
+
+      - name: 📤 Upload macOS Apple Silicon assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          shopt -s nullglob
+          ASSETS=(release-assets/*)
+          test "${#ASSETS[@]}" -gt 0
+          gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          echo "Uploaded ${#ASSETS[@]} macOS Apple Silicon assets"
+
+      - name: 📤 Build and upload macOS Apple Silicon updater manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/build_target_latest_json.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --assets-dir "release-assets" \
+            --notes-file "release-metadata/release-notes.md" \
+            --published-at "$(cat release-metadata/published-at.txt)" \
+            --targets "darwin-aarch64-app" \
+            --output-dir "target-manifests"
+          gh release upload "v${VERSION}" target-manifests/*.json --clobber
+
+      # Tag URL (not /releases/latest/) — see Windows verify comment.
+      - name: 🔍 Verify published macOS Apple Silicon updater manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/verify_published_updater_manifests.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --targets "darwin-aarch64-app" \
+            --latest-base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}"
+
+  build-macos-x86_64:
+    name: "🏗️ Build: macOS Intel"
+    # Parallel with Windows / macOS Apple Silicon after prepare.
+    needs:
+      - prepare-release
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-apple-darwin
+
+      - name: 🦀 Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          key: macos-x86_64-release
+
+      - name: 🐹 Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install frontend dependencies
+        run: npm install
+
+      - name: 🔄 Sync versions
+        run: npm run sync-version
+
+      - name: 💾 Cache Tauri tooling
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/tauri
+          key: tauri-deps-macos-latest-x86_64-${{ hashFiles('package-lock.json', '**/Cargo.toml') }}
+          restore-keys: |
+            tauri-deps-macos-latest-x86_64-
+
+      - name: 🏗️ Build macOS Intel app
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --ci --target x86_64-apple-darwin
+
+      - name: 📥 Download release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: 📦 Stage macOS Intel assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/stage_release_assets.cjs \
+            --platform macos \
+            --mac-arch x64 \
+            --assets-dir "target/x86_64-apple-darwin/release/bundle" \
+            --output-dir "release-assets"
+
+      - name: 📤 Upload macOS Intel assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          shopt -s nullglob
+          ASSETS=(release-assets/*)
+          test "${#ASSETS[@]}" -gt 0
+          gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          echo "Uploaded ${#ASSETS[@]} macOS Intel assets"
+
+      - name: 📤 Build and upload macOS Intel updater manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/build_target_latest_json.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --assets-dir "release-assets" \
+            --notes-file "release-metadata/release-notes.md" \
+            --published-at "$(cat release-metadata/published-at.txt)" \
+            --targets "darwin-x86_64-app" \
+            --output-dir "target-manifests"
+          gh release upload "v${VERSION}" target-manifests/*.json --clobber
+
+      # Tag URL (not /releases/latest/) — see Windows verify comment.
+      - name: 🔍 Verify published macOS Intel updater manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/verify_published_updater_manifests.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --targets "darwin-x86_64-app" \
+            --latest-base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}"
+
+  build-macos-universal:
+    name: "🏗️ Build: macOS Universal"
+    # Still sequential after both arch builds (needs arm + x64 artifacts).
+    needs:
+      - prepare-release
+      - build-macos-aarch64
+      - build-macos-x86_64
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🦀 Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: 🦀 Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          key: macos-universal-release
+
+      - name: 🐹 Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install frontend dependencies
+        run: npm install
+
+      - name: 🔄 Sync versions
+        run: npm run sync-version
+
+      - name: 💾 Cache Tauri tooling
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/tauri
+          key: tauri-deps-macos-latest-universal-${{ hashFiles('package-lock.json', '**/Cargo.toml') }}
+          restore-keys: |
+            tauri-deps-macos-latest-universal-
+
+      - name: 🏗️ Build macOS Universal app
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --ci --target universal-apple-darwin
+
+      - name: 📦 Stage macOS Universal assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/stage_release_assets.cjs \
+            --platform macos \
+            --mac-arch universal \
+            --assets-dir "target/universal-apple-darwin/release/bundle" \
+            --output-dir "release-assets"
+
+      - name: 📤 Upload macOS Universal assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          shopt -s nullglob
+          ASSETS=(release-assets/*)
+          test "${#ASSETS[@]}" -gt 0
+          gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          echo "Uploaded ${#ASSETS[@]} macOS Universal assets"
+
+  build-linux:
+    name: "🏗️ Build: Linux (${{ matrix.label }})"
+    # Parallel with Windows / macOS after prepare; matrix arches run in parallel.
+    needs:
+      - prepare-release
+    runs-on: ${{ matrix.platform }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "x86_64"
+            platform: "ubuntu-22.04"
+            targets: "linux-x86_64-appimage,linux-x86_64-deb,linux-x86_64-rpm"
+          - label: "aarch64"
+            platform: "ubuntu-24.04-arm"
+            targets: "linux-aarch64-appimage,linux-aarch64-deb,linux-aarch64-rpm"
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐧 Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev patchelf pkg-config libsoup-3.0-dev javascriptcoregtk-4.1 libjavascriptcoregtk-4.1-dev
+          sudo apt-get install -y libnm-dev xdg-utils
+
+      - name: 🦀 Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: 🦀 Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          key: linux-${{ matrix.label }}-release
+
+      - name: 🐹 Go setup
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: sidecars/cockpit-cliproxy/go.mod
+          cache-dependency-path: sidecars/cockpit-cliproxy/go.sum
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: 📦 Install frontend dependencies
+        run: npm install
+
+      - name: 🔄 Sync versions
+        run: npm run sync-version
+
+      - name: 💾 Cache Tauri tooling
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/tauri
+          key: tauri-deps-${{ matrix.platform }}-${{ hashFiles('package-lock.json', '**/Cargo.toml') }}
+          restore-keys: |
+            tauri-deps-${{ matrix.platform }}-
+
+      - name: 🏗️ Build Linux app
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npx tauri build --ci
+
+      - name: 📥 Download release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: 📦 Stage Linux assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/stage_release_assets.cjs \
+            --platform linux \
+            --assets-dir "target/release/bundle" \
+            --output-dir "release-assets"
+
+      - name: 📤 Upload Linux assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="v${VERSION}"
+          shopt -s nullglob
+          ASSETS=(release-assets/*)
+          test "${#ASSETS[@]}" -gt 0
+          gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+          echo "Uploaded ${#ASSETS[@]} Linux assets"
+
+      - name: 📤 Build and upload Linux updater manifests
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/build_target_latest_json.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --assets-dir "release-assets" \
+            --notes-file "release-metadata/release-notes.md" \
+            --published-at "$(cat release-metadata/published-at.txt)" \
+            --targets "${{ matrix.targets }}" \
+            --output-dir "target-manifests"
+          gh release upload "v${VERSION}" target-manifests/*.json --clobber
+
+      # Tag URL (not /releases/latest/) — see Windows verify comment.
+      - name: 🔍 Verify published Linux updater manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/verify_published_updater_manifests.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --targets "${{ matrix.targets }}" \
+            --latest-base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}"
+
+  finalize-legacy-latest:
+    name: 🏁 Finalize Legacy Updater Manifest
+    # Wait for every platform build so latest.json is complete.
+    needs:
+      - prepare-release
+      - build-windows
+      - build-macos-universal
+      - build-linux
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Node.js setup
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📥 Download release metadata
+        uses: actions/download-artifact@v4
+        with:
+          name: release-metadata
+          path: release-metadata
+
+      - name: 📥 Download all release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          TAG="v${VERSION}"
+          downloaded="false"
+          for i in $(seq 1 30); do
+            if gh release download "${TAG}" --dir release-assets --pattern "*" --clobber; then
+              downloaded="true"
+              break
+            fi
+            echo "Release assets not ready yet (attempt $i/30). Sleeping 10s..."
+            sleep 10
+          done
+          if [ "${downloaded}" != "true" ]; then
+            echo "Failed to download release assets from ${TAG} after retries."
+            exit 1
+          fi
+
+      - name: 🏗️ Build complete legacy latest.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/build_merged_latest_json.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --assets-dir "release-assets" \
+            --notes-file "release-metadata/release-notes.md" \
+            --published-at "$(cat release-metadata/published-at.txt)" \
+            --output "latest.json"
+
+      - name: 🔍 Validate complete legacy latest.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          jq -e '
+            .platforms["darwin-aarch64"] and
+            .platforms["darwin-x86_64"] and
+            .platforms["windows-x86_64"] and
+            .platforms["windows-x86_64-nsis"] and
+            .platforms["linux-x86_64-appimage"] and
+            .platforms["linux-x86_64-deb"] and
+            .platforms["linux-x86_64-rpm"] and
+            .platforms["linux-aarch64-appimage"] and
+            .platforms["linux-aarch64-deb"] and
+            .platforms["linux-aarch64-rpm"]
+          ' latest.json > /dev/null
+          jq -r '.platforms | keys[]' latest.json
+
+      - name: 📤 Publish complete legacy latest.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "v${VERSION}" latest.json --clobber
+          gh release edit "v${VERSION}" --draft=false --prerelease=false --latest
+
+      # End-to-end: user-facing /releases/latest/download (do not use tag URL here).
+      - name: 🔍 Verify complete published updater state
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/release/verify_published_updater_manifests.cjs \
+            --version "${VERSION}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --targets "darwin-aarch64-app,darwin-x86_64-app,windows-x86_64-msi,windows-x86_64-nsis,linux-x86_64-appimage,linux-x86_64-deb,linux-x86_64-rpm,linux-aarch64-appimage,linux-aarch64-deb,linux-aarch64-rpm" \
+            --legacy
+
+  upload-checksums:
+    name: 🔗 Publish SHA256SUMS
+    needs:
+      - prepare-release
+      - finalize-legacy-latest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_REPO: ${{ github.repository }}
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Download release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          gh release download "v${VERSION}" --dir release-assets --pattern "*" --clobber
+
+      - name: ⚙️ Generate SHA256SUMS.txt from release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release-assets
+          rm -f SHA256SUMS.txt
+          find . -type f -print0 \
+            | sort -z \
+            | while IFS= read -r -d '' file; do
+                shasum -a 256 "$file"
+              done \
+            | sed 's#  \./#  #' \
+            > ../SHA256SUMS.txt
+          cd ..
+          test -s SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: 📤 Upload SHA256SUMS.txt to release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload "v${VERSION}" SHA256SUMS.txt --clobber
+
+  update-homebrew-cask:
+    name: 🍺 Update Homebrew Cask
+    needs:
+      - prepare-release
+      - finalize-legacy-latest
+      - upload-checksums
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      VERSION: ${{ needs.prepare-release.outputs.version }}
+    steps:
+      - name: 📥 Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: 📥 Download universal DMG from GitHub Releases
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${VERSION}/Cockpit.Tools_${VERSION}_universal.dmg"
+          echo "Downloading: ${URL}"
+          for i in $(seq 1 30); do
+            if curl -fL --retry 3 --retry-delay 1 -o cockpit-tools.dmg "${URL}"; then
+              exit 0
+            fi
+            echo "Asset not ready yet (attempt $i/30). Sleeping 10s..."
+            sleep 10
+          done
+          echo "Failed to download release asset after retries."
+          exit 1
+
+      - name: ⚙️ Compute SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          SHA256="$(sha256sum cockpit-tools.dmg | awk '{print $1}')"
+          echo "SHA256=${SHA256}" >> "$GITHUB_ENV"
+
+      - name: 📝 Update Cask file
+        shell: bash
+        run: |
+          set -euo pipefail
+          FILE="Casks/cockpit-tools.rb"
+          if [ ! -f "${FILE}" ]; then
+            echo "Missing ${FILE}. Create it first."
+            exit 1
+          fi
+
+          perl -0777 -i -pe \
+            's/version \"[^\"]+\"/version \"'"${VERSION}"'\"/; s/sha256 \"[0-9a-f]{64}\"/sha256 \"'"${SHA256}"'\"/' \
+            "${FILE}"
+
+          git diff -- "${FILE}"
+
+      - name: 🚀 Create pull request
+        id: create_cask_pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore(homebrew): update cask for v${{ env.VERSION }}"
+          title: "chore(homebrew): update cask for v${{ env.VERSION }}"
+          body: |
+            Auto-generated by the release workflow.
+
+            - version: ${{ env.VERSION }}
+            - sha256 (universal.dmg): ${{ env.SHA256 }}
+          branch: "automation/update-cask-v${{ env.VERSION }}"
+          base: main
+          delete-branch: true
+
+      - name: 🚀 Enable auto-merge for cask PR
+        if: ${{ steps.create_cask_pr.outputs.pull-request-number != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          PR_NUMBER="${{ steps.create_cask_pr.outputs.pull-request-number }}"
+          PR_BRANCH="$(gh pr view "${PR_NUMBER}" --json headRefName --jq '.headRefName')"
+          if [[ "${PR_BRANCH}" != automation/update-cask-v* ]]; then
+            echo "Unexpected PR branch: ${PR_BRANCH}"
+            exit 1
+          fi
+          gh pr merge "${PR_NUMBER}" --auto --squash --delete-branch

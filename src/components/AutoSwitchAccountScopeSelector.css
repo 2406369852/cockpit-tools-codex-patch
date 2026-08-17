@@ -1,0 +1,257 @@
+.settings-account-scope {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-account-scope--compact {
+  width: auto;
+  min-width: 0;
+}
+
+.settings-account-scope-compact-row {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.settings-account-scope-compact-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.settings-account-scope-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-account-scope-mode--dialog {
+  margin-bottom: 2px;
+}
+
+.settings-account-scope-panel {
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-account-scope-panel--dialog {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 0;
+}
+
+.settings-account-scope-toolbar {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 260px) 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-account-scope-dialog-trigger {
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-account-scope-dialog-summary {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.settings-account-scope-select-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.settings-account-scope-search {
+  min-width: 0;
+  width: 100%;
+}
+
+.settings-account-scope-filters {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+
+.settings-account-scope-count {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.settings-account-scope-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.settings-account-scope-panel--dialog .settings-account-scope-list {
+  max-height: min(42vh, 280px);
+}
+
+.settings-account-scope-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  cursor: pointer;
+}
+
+.settings-account-scope-item.selected {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border-light));
+  background: color-mix(in srgb, var(--primary) 10%, var(--bg-secondary));
+}
+
+.settings-account-scope-item-label {
+  font-size: 13px;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-account-scope-empty {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 10px 4px;
+}
+
+.settings-account-scope-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.settings-account-scope-dialog {
+  width: min(680px, calc(100vw - 48px));
+  max-height: calc(100vh - 48px);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-light);
+  border-radius: 14px;
+  box-shadow: var(--shadow-xl);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.settings-account-scope-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-account-scope-dialog-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.settings-account-scope-dialog-footer {
+  border-top: 1px solid var(--border-light);
+  padding-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settings-account-scope-dialog-all-accounts-hint {
+  border: 1px solid var(--border-light);
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 12px;
+}
+
+@media (max-width: 1024px) {
+  .settings-account-scope-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .settings-account-scope-compact-row {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .settings-account-scope-select-all {
+    white-space: normal;
+  }
+
+  .settings-account-scope-count {
+    white-space: normal;
+  }
+
+  .settings-account-scope-dialog-trigger {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-account-scope-dialog-overlay {
+    padding: 12px;
+  }
+
+  .settings-account-scope-dialog {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    border-radius: 12px;
+    padding: 12px;
+  }
+
+  .settings-account-scope-dialog-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-account-scope-compact-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .settings-account-scope-compact-summary {
+    white-space: normal;
+  }
+}

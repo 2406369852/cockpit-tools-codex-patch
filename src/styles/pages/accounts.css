@@ -1,0 +1,906 @@
+/* ============================================
+   Merged Accounts Page - Grid/List View (Redesigned)
+   ============================================ */
+
+/* View Switcher - Pill Style */
+.view-switcher {
+  display: flex;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  padding: 3px;
+  border: none;
+}
+
+.view-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.view-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.view-btn.active {
+  background: #ffffff;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Accounts Grid - Compact Futurist Card View */
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* 缩小宽度以支持一排3-4个 */
+  gap: 16px;
+  padding-bottom: 40px;
+  animation: fadeUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.account-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 12px; /* 稍微减小圆角 */
+  padding: 14px; /* 减小内边距 */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.02), 
+    0 4px 16px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  overflow: visible; /* 允许悬停效果稍微溢出 */
+}
+
+/* Hover Effect */
+.account-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.06), 
+    0 12px 24px rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+/* Current Account */
+.account-card.current {
+  background: #ffffff;
+  border: 1px solid var(--primary); /* 简化选中样式，用细边框 */
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.08);
+}
+
+.account-card.current::before {
+  display: none; /* 移除原来的左侧粗线条，太占空间 */
+}
+
+/* Card Top Row */
+.card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.account-card .account-email {
+  font-size: 13px;
+  padding: 2px 6px;
+  background: transparent; /* 移除背景让视觉更轻 */
+  margin-left: -4px; /* 微调对齐 */
+}
+
+.accounts-page .card-notes {
+  margin-top: -4px;
+}
+
+.accounts-page .card-notes .notes-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.accounts-page .card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: -4px;
+}
+
+.accounts-page .tag-pill {
+  padding: 2px 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid var(--border-light);
+}
+
+.accounts-page .tag-pill.more {
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+
+/* Card Quota Grid - Redesigned */
+.card-quota-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+  background: #f8fafc; /* 非常淡的背景 */
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid rgba(0,0,0,0.03);
+}
+
+.card-quota-grid .quota-forbidden {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.card-quota-grid .quota-forbidden svg {
+  flex-shrink: 0;
+}
+
+.quota-compact-item {
+  gap: 4px;
+}
+
+/* Neon Glow Progress Bars */
+.quota-compact-bar-track {
+  height: 5px; /* 稍微变细 */
+}
+
+/* Card Footer - Compact & Clean */
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.card-date {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding: 0;
+  background: transparent;
+}
+
+/* Minimalist Action Bar - No Background */
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: transparent; /* 移除背景 */
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.card-action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  color: var(--text-muted); /* 默认灰色 */
+  transition: all 0.2s;
+  background: transparent;
+}
+
+.card-action-btn:hover:not(:disabled) {
+  background: rgba(0,0,0,0.04); /* 只有悬停时才有淡淡的背景 */
+  color: var(--text-primary);
+  transform: none; /* 移除放大效果，保持稳重 */
+  box-shadow: none;
+}
+
+.card-action-btn.success:hover:not(:disabled) {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--success);
+}
+
+.card-action-btn.danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.accounts-page .card-action-btn.active,
+.accounts-page .action-btn.active {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.antigravity-account-note-modal {
+  width: min(520px, calc(100vw - 32px));
+}
+
+.antigravity-account-note-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.antigravity-account-note-desc {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.antigravity-account-note-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.antigravity-account-note-field textarea {
+  min-height: 104px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.antigravity-account-note-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.antigravity-account-note-field textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.antigravity-account-note-count {
+  align-self: flex-end;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.accounts-page .codex-account-note-chip,
+.add-account-modal .codex-account-note-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  max-width: 140px;
+  height: 24px;
+  padding: 0 9px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.04);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.accounts-page .codex-account-note-chip:hover,
+.accounts-page .codex-account-note-chip.has-note,
+.add-account-modal .codex-account-note-chip:hover,
+.add-account-modal .codex-account-note-chip.has-note {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+  background: color-mix(in srgb, var(--primary) 9%, transparent);
+}
+
+.antigravity-account-meta-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.antigravity-pending-oauth-draft {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--bg-secondary) 82%, transparent);
+}
+
+.antigravity-pending-oauth-draft .oauth-link {
+  margin: 0;
+}
+
+/* #1287 denser Codex account cards — hit real Codex DOM classes */
+.codex-accounts-page .codex-accounts-grid .codex-account-card {
+  padding: 12px 14px;
+  gap: 12px;
+}
+.codex-accounts-page .codex-accounts-grid .codex-account-card .card-actions {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Tech-Badge - Compact */
+.tier-badge {
+  padding: 2px 6px;
+  font-size: 10px;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.tier-badge::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+  z-index: -1;
+}
+
+/* Style-only plan badge variants (#772); plan text stays raw. */
+.tier-badge.plan-badge-style-outline,
+.instance-plan-badge.plan-badge-style-outline {
+  background: transparent !important;
+  border-width: 1px;
+  border-style: solid;
+}
+.tier-badge.plan-badge-style-soft,
+.instance-plan-badge.plan-badge-style-soft {
+  filter: saturate(0.85);
+  opacity: 0.92;
+  border-radius: 999px;
+}
+.tier-badge.plan-badge-style-mono,
+.instance-plan-badge.plan-badge-style-mono {
+  background: var(--bg-secondary, #2a2a2a) !important;
+  color: var(--text-primary, #e8e8e8) !important;
+  border: 1px solid var(--border-light, #444) !important;
+}
+
+.tier-badge.pro {
+  background: var(--plan-pro-bg);
+  color: var(--plan-pro-color);
+  border: 1px solid var(--plan-pro-border);
+}
+
+.tier-badge.pro-plus,
+.tier-badge.pro-ultimate {
+  background: var(--plan-ultra-bg);
+  color: var(--plan-ultra-color);
+  border: 1px solid var(--plan-ultra-border);
+}
+
+.tier-badge.ultra {
+  background: var(--plan-ultra-bg);
+  color: var(--plan-ultra-color);
+  border: 1px solid var(--plan-ultra-border);
+}
+
+.tier-badge.individual {
+  background: var(--plan-individual-bg);
+  color: var(--plan-individual-color);
+  border: 1px solid var(--plan-individual-border);
+}
+
+.tier-badge.business {
+  background: var(--plan-business-bg);
+  color: var(--plan-business-color);
+  border: 1px solid var(--plan-business-border);
+}
+
+.tier-badge.team,
+.tier-badge.teams {
+  background: var(--plan-team-bg);
+  color: var(--plan-team-color);
+  border: 1px solid var(--plan-team-border);
+}
+
+.tier-badge.teams-ultimate {
+  background: var(--plan-ultra-bg);
+  color: var(--plan-ultra-color);
+  border: 1px solid var(--plan-ultra-border);
+}
+
+.tier-badge.enterprise {
+  background: var(--plan-enterprise-bg);
+  color: var(--plan-enterprise-color);
+  border: 1px solid var(--plan-enterprise-border);
+}
+
+.tier-badge.free {
+  background: var(--plan-free-bg);
+  color: var(--plan-free-color);
+  border: 1px solid var(--plan-free-border);
+}
+
+.tier-badge.trial {
+  background: var(--plan-trial-bg);
+  color: var(--plan-trial-color);
+  border: 1px solid var(--plan-trial-border);
+}
+
+.tier-badge.unknown {
+  background: var(--plan-unknown-bg);
+  color: var(--plan-unknown-color);
+  border: 1px solid var(--plan-unknown-border);
+}
+
+/* Inline Folder Cards (inside accounts-grid) */
+.folder-inline-card {
+  cursor: pointer;
+  background: linear-gradient(135deg, #f0f7ff 0%, #e8f4f8 100%);
+  border: 1.5px dashed rgba(29, 78, 216, 0.25);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.folder-inline-card:hover {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #e8f0fe 0%, #dbeafe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(29, 78, 216, 0.12);
+}
+
+.folder-inline-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.folder-icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 1;
+  transition: all 0.2s;
+}
+
+.folder-inline-header .folder-icon-btn:first-of-type {
+  margin-left: auto;
+}
+
+/* 列表视图中的文件夹行 */
+.folder-table-row {
+  background: var(--bg-card, #f7f7f8);
+  transition: background 0.15s;
+}
+.folder-table-row:hover {
+  background: var(--bg-hover, #eef0f4);
+}
+.folder-icon-btn:hover {
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.folder-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.folder-delete-btn:hover {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.folder-table-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.folder-inline-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--primary), #3b82f6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.folder-inline-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.folder-inline-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.folder-inline-quota-meta {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.folder-inline-name-input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.folder-inline-name-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+}
+
+.folder-inline-name-input--table {
+  width: 220px;
+  height: 28px;
+  font-size: 14px;
+}
+
+.folder-inline-count {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.folder-inline-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  overflow-y: auto;
+}
+
+.folder-inline-preview::-webkit-scrollbar {
+  width: 3px;
+}
+
+.folder-inline-preview::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 3px;
+}
+
+.folder-preview-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.folder-preview-item.disabled {
+  opacity: 0.4;
+}
+
+.folder-preview-item .folder-preview-email {
+  font-size: 12px;
+  color: var(--text-secondary);
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+}
+
+.folder-preview-item .tier-badge {
+  font-size: 9px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+.folder-preview-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.folder-preview-remove-btn:hover:not(:disabled) {
+  color: var(--danger, #ef4444);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.folder-preview-remove-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.folder-preview-item.more {
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] .folder-inline-card {
+  background: linear-gradient(135deg, #1a2744 0%, #1e293b 100%);
+  border-color: rgba(96, 165, 250, 0.2);
+}
+
+[data-theme="dark"] .folder-inline-card:hover {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e3050 100%);
+  border-color: rgba(96, 165, 250, 0.4);
+}
+
+[data-theme="dark"] .folder-inline-preview {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .accounts-grid .account-card {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.05);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+[data-theme="dark"] .account-card .account-email {
+  background: transparent;
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .card-quota-grid {
+  background: rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.05);
+}
+
+[data-theme="dark"] .quota-compact-bar-track {
+  background: rgba(255,255,255,0.1);
+}
+
+[data-theme="dark"] .view-btn.active {
+  background: #334155;
+  color: #fff;
+}
+
+[data-theme="dark"] .card-actions {
+  background: #1e293b;
+  border-color: rgba(255,255,255,0.05);
+}
+
+[data-theme="dark"] .card-date {
+  background: rgba(255,255,255,0.05);
+  color: #94a3b8;
+}
+
+/* Custom quota columns layout for Antigravity */
+.card-quota-grid .quota-column,
+.quota-grid .quota-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.card-quota-grid .quota-column-title,
+.quota-grid .quota-column-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.accounts-page .card-quota-grid,
+.accounts-page .quota-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px 12px;
+}
+
+/* Custom Sort Modal Styles (added for Antigravity custom sorting) */
+.codex-custom-sort-modal {
+  width: min(680px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 48px));
+}
+
+.codex-custom-sort-modal .modal-header {
+  align-items: flex-start;
+}
+
+.codex-custom-sort-modal-desc {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.codex-custom-sort-modal .modal-body {
+  max-height: min(560px, calc(100vh - 220px));
+  overflow: auto;
+}
+
+.codex-custom-sort-list {
+  display: grid;
+  gap: 8px;
+}
+
+.codex-custom-sort-list.is-sorting {
+  user-select: none;
+}
+
+.codex-custom-sort-list.is-sorting .codex-custom-sort-row,
+.codex-custom-sort-list.is-sorting .codex-custom-sort-drag-handle {
+  cursor: grabbing;
+}
+
+.codex-custom-sort-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  background: var(--bg-card);
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.codex-custom-sort-row:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.codex-custom-sort-row.is-dragging {
+  border-color: color-mix(in srgb, var(--primary) 42%, var(--border));
+  background: var(--bg-hover);
+  box-shadow: var(--shadow-sm);
+  transform: scale(1.005);
+}
+
+.codex-custom-sort-row.is-drop-candidate {
+  border-style: dashed;
+}
+
+.codex-custom-sort-row.is-drop-target {
+  border-color: color-mix(in srgb, var(--primary) 62%, var(--border));
+  background: var(--bg-hover);
+}
+
+.codex-custom-sort-row-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.codex-custom-sort-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.codex-custom-sort-drag-handle:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.codex-custom-sort-index {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.codex-custom-sort-account {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.codex-custom-sort-account-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.codex-custom-sort-account-title > span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.codex-custom-sort-quota-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+
+.codex-custom-sort-quota {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.codex-custom-sort-quota > span {
+  color: var(--text-muted);
+}
+
+.codex-custom-sort-quota-empty {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.codex-custom-sort-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}

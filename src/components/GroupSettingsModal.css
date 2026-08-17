@@ -1,0 +1,115 @@
+/**
+ * 分组管理弹窗样式
+ * 简化版 - 只允许修改分组名
+ */
+
+/* 弹窗容器 */
+.group-settings-modal {
+  max-width: 600px;
+}
+
+/* 错误提示 */
+.group-settings-error {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+/* 分组列表区域 */
+.group-list-section {
+  margin-bottom: 20px;
+}
+
+.group-list-section h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* 单个分组项 */
+.group-item {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.group-icon {
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.group-name-input {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.group-name-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.12);
+}
+
+/* 分组内的模型标签 */
+.group-models {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.model-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 只读模型标签 */
+.model-tag.readonly {
+  cursor: default;
+  opacity: 0.85;
+}
+
+/* 弹窗底部按钮 */
+.group-settings-modal .modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+}

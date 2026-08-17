@@ -1,0 +1,43 @@
+/* Shared settings control styles (used by settings page and app-level dialogs) */
+
+.settings-inline-input {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-inline-input .settings-select {
+  width: 100%;
+}
+
+.settings-input-unit {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.settings-input {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 140px;
+  text-align: right;
+  outline: none;
+}
+
+.settings-input--path {
+  width: 100%;
+  text-align: left;
+}
+
+.settings-input:focus {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}

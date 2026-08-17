@@ -1,0 +1,99 @@
+.zed-accounts-page .ghcp-account-card {
+  min-height: 0;
+}
+
+.zed-status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.zed-accounts-page .status-pill.normal {
+  color: #15803d;
+  background: rgba(34, 197, 94, 0.12);
+  border-color: rgba(34, 197, 94, 0.24);
+}
+
+.zed-accounts-page .status-pill.neutral {
+  color: var(--text-secondary);
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(148, 163, 184, 0.24);
+}
+
+.zed-login-pill {
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: var(--font-mono);
+}
+
+.zed-accounts-page .zed-usage-metric-item {
+  gap: 6px;
+}
+
+.zed-accounts-page .zed-usage-metric-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.zed-accounts-page .zed-usage-metric-label {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.zed-accounts-page .zed-usage-metric-value {
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: -0.2px;
+}
+
+.zed-accounts-page .zed-usage-metric-value.high {
+  color: var(--success);
+}
+
+.zed-accounts-page .zed-usage-metric-value.medium {
+  color: #f59e0b;
+}
+
+.zed-accounts-page .zed-usage-metric-value.low {
+  color: #f97316;
+}
+
+.zed-accounts-page .windsurf-official-usage-value.high {
+  color: var(--success);
+}
+
+.zed-accounts-page .windsurf-official-usage-value.low {
+  color: #f97316;
+}
+
+.zed-accounts-page .zed-usage-metric-track {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.zed-accounts-page .zed-usage-metric-track.compact {
+  height: 4px;
+}
+
+.zed-accounts-page .zed-usage-metric-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.zed-accounts-page .zed-usage-metric-bar.high {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.zed-accounts-page .zed-usage-metric-bar.medium {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.zed-accounts-page .zed-usage-metric-bar.low {
+  background: linear-gradient(90deg, #fb923c, #f97316);
+}

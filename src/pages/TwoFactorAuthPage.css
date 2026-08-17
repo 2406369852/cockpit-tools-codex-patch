@@ -1,0 +1,410 @@
+.two-factor-query-page {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.two-factor-query-page .page-heading h1 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.two-factor-query-page .page-heading p {
+  max-width: 760px;
+}
+
+.query-section {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 0 24px;
+}
+
+.query-main {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.query-inputs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.query-actions-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.query-result-box {
+  width: 200px;
+  height: 100px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.query-result-code {
+  font-family: var(--font-mono);
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--text-primary);
+}
+
+.query-result-empty {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+.query-result-countdown {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lists-section {
+  display: flex;
+  flex-direction: column;
+  margin: 0 24px 24px;
+}
+
+.list-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-header {
+  padding: 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-primary);
+}
+
+.list-tabs {
+  display: flex;
+  gap: 0;
+}
+
+.list-tab {
+  padding: 14px 24px;
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.list-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.list-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+.list-actions {
+  padding-right: 16px;
+  display: flex;
+  gap: 8px;
+}
+
+.list-header h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.list-content {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 500px;
+}
+
+.tfa-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tfa-table th,
+.tfa-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.tfa-table th {
+  color: var(--text-secondary);
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.tfa-sort-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tfa-sort-toggle {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tfa-sort-toggle:hover {
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+
+.tfa-table td {
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.tfa-secret-cell {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.tfa-secret-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tfa-secret-value {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  user-select: text;
+}
+
+.tfa-secret-value::selection {
+  background: rgba(37, 99, 235, 0.2);
+  color: var(--text-primary);
+}
+
+.tfa-code-cell {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  color: var(--primary);
+  width: 90px;
+}
+
+.tfa-remark-cell {
+  font-weight: 500;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tfa-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.tfa-empty-state {
+  padding: 40px;
+  text-align: center;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+.tfa-time-badge {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 99px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  margin-left: 8px;
+}
+
+.tfa-time-badge.warning {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* MFA Type Switcher */
+.mfa-type-switcher {
+  display: flex;
+  gap: 8px;
+  background: var(--bg-secondary);
+  padding: 6px;
+  border-radius: var(--radius-lg);
+  width: fit-content;
+  border: 1px solid var(--border-color);
+}
+
+.mfa-type-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mfa-type-tab:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.mfa-type-tab.active {
+  background: var(--bg-primary);
+  color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.mfa-page-desc {
+  max-width: 100%;
+  padding: 14px 18px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mfa-vault-manual-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.mfa-vault-manual-input-wrap {
+  flex: 1;
+  min-width: 320px;
+}
+
+.mfa-vault-manual-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.5;
+}
+
+.mfa-vault-inline-error {
+  font-size: 12px;
+  color: var(--danger);
+  line-height: 1.4;
+}
+
+.mfa-vault-account-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mfa-vault-account-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mfa-vault-account-edit-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mfa-vault-account-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mfa-vault-account-edit-row input {
+  width: 100%;
+  min-width: 120px;
+  padding: 6px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.mfa-vault-account-edit-row input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+@media (max-width: 880px) {
+  .mfa-vault-manual-input-wrap {
+    min-width: 100%;
+  }
+}
+
+/* Icon styles inside switcher */
+.mfa-type-tab svg {
+  color: var(--text-tertiary);
+  transition: color 0.2s ease;
+}
+
+.mfa-type-tab.active svg {
+  color: var(--primary);
+}

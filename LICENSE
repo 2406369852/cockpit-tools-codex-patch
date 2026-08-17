@@ -1,0 +1,12 @@
+CC BY-NC-SA 4.0
+
+This repository is based on Cockpit Tools by jlcodes (https://github.com/jlcodes99/cockpit-tools)
+and is distributed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0
+International license.
+
+You must give appropriate credit, use the material only for non-commercial purposes,
+and distribute adaptations under the same license. The complete legal code is available at:
+https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode
+
+This repository also contains third-party components with their own licenses. In particular,
+see sidecars/cockpit-cliproxy/cdk/CLIProxyAPI/LICENSE for the bundled MIT-licensed component.

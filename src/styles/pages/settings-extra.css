@@ -1,0 +1,195 @@
+/* ============================================
+   Settings Page Styles
+   ============================================ */
+.settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: none;
+  align-items: center;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.section-header p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-left: 30px;
+}
+
+.settings-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 20px;
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 0 24px;
+}
+
+.row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.row-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.status-badge.running {
+  background: rgba(34, 197, 94, 0.1);
+  color: #15803d;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
+  animation: pulse 2s infinite;
+}
+
+.port-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-tertiary);
+  padding: 4px 4px 4px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.port-number {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.copy-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: var(--bg-secondary);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+
+.copy-btn:hover {
+  color: var(--primary);
+  transform: scale(1.05);
+}
+
+.copy-btn.copied {
+  color: var(--success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.version-pill {
+  background: var(--bg-tertiary);
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.icon-blue { color: var(--primary); }
+.icon-purple { color: #8b5cf6; }
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  70% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+}
+
+/* Quota Bar Colors */
+.quota-mini-bar.high {
+  background: var(--success, #10b981);
+}
+
+.quota-mini-bar.medium {
+  background: var(--warning, #f59e0b);
+}
+
+.quota-mini-bar.low {
+  background: var(--warning-strong, #f97316);
+}
+
+.quota-mini-bar.critical {
+  background: var(--error, #ef4444);
+}
+
+/* 补充字体颜色，以防万一 */
+.model-pct.high { color: var(--success, #10b981); }
+.model-pct.medium { color: var(--warning, #f59e0b); }
+.model-pct.low { color: var(--warning-strong, #f97316); }
+.model-pct.critical { color: var(--error, #ef4444); }
+
+/* Quota Progress Bar Colors (Table View) */
+.quota-progress-bar.high {
+  background: var(--success, #10b981);
+}
+
+.quota-progress-bar.medium {
+  background: var(--warning, #f59e0b);
+}
+
+.quota-progress-bar.low {
+  background: var(--warning-strong, #f97316);
+}
+
+.quota-progress-bar.critical {
+  background: var(--error, #ef4444);
+}

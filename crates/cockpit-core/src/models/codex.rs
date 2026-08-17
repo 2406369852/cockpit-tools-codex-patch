@@ -1,0 +1,372 @@
+use serde::{Deserialize, Serialize};
+
+fn default_token_source_mode() -> String {
+    "managed".to_string()
+}
+
+fn is_false(value: &bool) -> bool {
+    !*value
+}
+
+/// Codex 认证模式
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum CodexAuthMode {
+    OAuth,
+    Apikey,
+}
+
+impl Default for CodexAuthMode {
+    fn default() -> Self {
+        Self::OAuth
+    }
+}
+
+/// Codex API Key 账号的模型提供商模式
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum CodexApiProviderMode {
+    OpenaiBuiltin,
+    Custom,
+}
+
+impl Default for CodexApiProviderMode {
+    fn default() -> Self {
+        Self::OpenaiBuiltin
+    }
+}
+
+/// Codex config.toml 快捷配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexQuickConfig {
+    pub context_window_1m: bool,
+    pub auto_compact_token_limit: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detected_model_context_window: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detected_auto_compact_token_limit: Option<i64>,
+}
+
+/// Codex 账号数据结构
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAccount {
+    pub id: String,
+    pub email: String,
+    #[serde(default)]
+    pub auth_mode: CodexAuthMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub openai_api_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_base_url: Option<String>,
+    #[serde(default)]
+    pub api_provider_mode: CodexApiProviderMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_provider_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_provider_name: Option<String>,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub api_supports_websockets: bool,
+    #[serde(default)]
+    pub bound_oauth_use_local_gateway: bool,
+    pub user_id: Option<String>,
+    pub plan_type: Option<String>,
+    pub account_id: Option<String>,
+    pub organization_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_identity: Option<CodexAgentIdentity>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account_structure: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub account_note: Option<String>,
+    pub tokens: CodexTokens,
+    #[serde(default)]
+    pub token_generation: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_updated_at: Option<i64>,
+    #[serde(default = "default_token_source_mode")]
+    pub token_source_mode: String,
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub requires_reauth: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reauth_reason: Option<String>,
+    pub quota: Option<CodexQuota>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quota_error: Option<CodexQuotaErrorInfo>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage_updated_at: Option<i64>,
+    pub tags: Option<Vec<String>>,
+    pub created_at: i64,
+    pub last_used: i64,
+}
+
+/// Codex Token 数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexTokens {
+    pub id_token: String,
+    pub access_token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+}
+
+/// Codex Agent Identity credentials from the official auth.json format.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CodexAgentIdentity {
+    #[serde(alias = "agentRuntimeId")]
+    pub agent_runtime_id: String,
+    #[serde(alias = "agentPrivateKey")]
+    pub agent_private_key: String,
+    #[serde(default, alias = "taskId", skip_serializing_if = "Option::is_none")]
+    pub task_id: Option<String>,
+    #[serde(alias = "accountId")]
+    pub account_id: String,
+    #[serde(alias = "chatgptUserId")]
+    pub chatgpt_user_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, alias = "planType", skip_serializing_if = "Option::is_none")]
+    pub plan_type: Option<String>,
+    #[serde(default, alias = "chatgptAccountIsFedramp")]
+    pub chatgpt_account_is_fedramp: bool,
+}
+
+/// Codex 配额数据（5小时配额 + 周配额）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexQuota {
+    /// 5小时配额百分比 (0-100)
+    pub hourly_percentage: i32,
+    /// 5小时配额重置时间 (Unix timestamp)
+    pub hourly_reset_time: Option<i64>,
+    /// 主窗口时长（分钟）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hourly_window_minutes: Option<i64>,
+    /// 主窗口是否存在（接口返回）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hourly_window_present: Option<bool>,
+    /// 周配额百分比 (0-100)
+    pub weekly_percentage: i32,
+    /// 周配额重置时间 (Unix timestamp)
+    pub weekly_reset_time: Option<i64>,
+    /// 次窗口时长（分钟）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weekly_window_minutes: Option<i64>,
+    /// 次窗口是否存在（接口返回）
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weekly_window_present: Option<bool>,
+    /// 原始响应数据
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub raw_data: Option<serde_json::Value>,
+}
+
+/// Codex 配额错误信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexQuotaErrorInfo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    pub message: String,
+    pub timestamp: i64,
+}
+
+/// ~/.codex/auth.json 文件格式
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAuthFile {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_mode: Option<String>,
+    #[serde(rename = "OPENAI_API_KEY")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub openai_api_key: Option<serde_json::Value>, // 可以是 null 或字符串
+    #[serde(
+        default,
+        alias = "api_base_url",
+        alias = "apiBaseUrl",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub base_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens: Option<CodexAuthTokens>,
+    #[serde(
+        default,
+        alias = "agentIdentity",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub agent_identity: Option<CodexAgentIdentity>,
+    #[serde(default)]
+    pub last_refresh: Option<serde_json::Value>, // 可以是字符串或数字
+}
+
+/// auth.json 中的 tokens 字段
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAuthTokens {
+    pub id_token: String,
+    pub access_token: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub refresh_token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub account_id: Option<String>,
+}
+
+/// Codex 账号索引（存储多账号）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAccountIndex {
+    pub version: String,
+    #[serde(default)]
+    pub detail_schema_version: u32,
+    pub accounts: Vec<CodexAccountSummary>,
+    pub current_account_id: Option<String>,
+}
+
+/// 账号摘要信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAccountSummary {
+    pub id: String,
+    pub email: String,
+    pub plan_type: Option<String>,
+    pub created_at: i64,
+    pub last_used: i64,
+}
+
+impl CodexAccountIndex {
+    pub fn new() -> Self {
+        Self {
+            version: "1.0".to_string(),
+            detail_schema_version: 2,
+            accounts: Vec::new(),
+            current_account_id: None,
+        }
+    }
+}
+
+impl Default for CodexAccountIndex {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// JWT Payload 中的用户信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexJwtPayload {
+    #[serde(default)]
+    pub aud: serde_json::Value, // 可能是 string 或 array
+    pub iss: Option<String>,
+    pub email: Option<String>,
+    pub email_verified: Option<bool>,
+    pub exp: Option<i64>,
+    pub iat: Option<i64>,
+    pub sub: Option<String>,
+    #[serde(rename = "https://api.openai.com/auth")]
+    pub auth_data: Option<CodexAuthData>,
+}
+
+/// JWT 中的 auth 数据
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodexAuthData {
+    pub chatgpt_user_id: Option<String>,
+    pub chatgpt_plan_type: Option<String>,
+    pub account_id: Option<String>,
+    pub organization_id: Option<String>,
+}
+
+impl CodexAccount {
+    pub fn new(id: String, email: String, tokens: CodexTokens) -> Self {
+        let now = chrono::Utc::now().timestamp();
+        Self {
+            id,
+            email,
+            auth_mode: CodexAuthMode::OAuth,
+            openai_api_key: None,
+            api_base_url: None,
+            api_provider_mode: CodexApiProviderMode::OpenaiBuiltin,
+            api_provider_id: None,
+            api_provider_name: None,
+            api_supports_websockets: false,
+            bound_oauth_use_local_gateway: false,
+            user_id: None,
+            plan_type: None,
+            account_id: None,
+            organization_id: None,
+            agent_identity: None,
+            account_name: None,
+            account_structure: None,
+            account_note: None,
+            tokens,
+            token_generation: 0,
+            token_updated_at: Some(now),
+            token_source_mode: default_token_source_mode(),
+            requires_reauth: false,
+            reauth_reason: None,
+            quota: None,
+            quota_error: None,
+            usage_updated_at: None,
+            tags: None,
+            created_at: now,
+            last_used: now,
+        }
+    }
+
+    pub fn new_api_key(
+        id: String,
+        email: String,
+        openai_api_key: String,
+        api_provider_mode: CodexApiProviderMode,
+        api_base_url: Option<String>,
+        api_provider_id: Option<String>,
+        api_provider_name: Option<String>,
+    ) -> Self {
+        let mut account = Self::new(
+            id,
+            email,
+            CodexTokens {
+                id_token: String::new(),
+                access_token: String::new(),
+                refresh_token: None,
+            },
+        );
+        account.auth_mode = CodexAuthMode::Apikey;
+        account.openai_api_key = Some(openai_api_key);
+        account.api_provider_mode = api_provider_mode;
+        account.api_base_url = api_base_url;
+        account.api_provider_id = api_provider_id;
+        account.api_provider_name = api_provider_name;
+        account.plan_type = Some("API_KEY".to_string());
+        account
+    }
+
+    pub fn is_api_key_auth(&self) -> bool {
+        self.auth_mode == CodexAuthMode::Apikey
+    }
+
+    pub fn is_agent_identity_auth(&self) -> bool {
+        self.agent_identity.is_some()
+    }
+
+    pub fn update_last_used(&mut self) {
+        self.last_used = chrono::Utc::now().timestamp();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn legacy_account_without_websocket_field_defaults_to_false() {
+        let account = CodexAccount::new_api_key(
+            "legacy-account".to_string(),
+            "api-key-account".to_string(),
+            "sk-test".to_string(),
+            CodexApiProviderMode::Custom,
+            Some("https://relay.example.com/v1".to_string()),
+            Some("relay".to_string()),
+            Some("Relay".to_string()),
+        );
+        let mut value = serde_json::to_value(account).expect("serialize account");
+        value
+            .as_object_mut()
+            .expect("account object")
+            .remove("api_supports_websockets");
+
+        let restored: CodexAccount = serde_json::from_value(value).expect("deserialize account");
+        assert!(!restored.api_supports_websockets);
+    }
+}

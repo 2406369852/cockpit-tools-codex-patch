@@ -1,0 +1,466 @@
+/* Compact View Styles - CSS Module */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 12px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  --compact-radius: var(--radius-md);
+  animation: fadeUp 0.4s ease both;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--compact-radius);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Legend Styles */
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--compact-radius);
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.gripIcon {
+  color: var(--text-muted);
+  opacity: 0.5;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+}
+
+.legendItem:hover .gripIcon {
+  opacity: 1;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: grab;
+  padding: 4px 8px 4px 4px;
+  border-radius: var(--compact-radius);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.legendItem:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.legendItemDragging {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  cursor: grabbing;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(29, 78, 216, 0.25);
+  z-index: 10;
+}
+
+.legendItemDropTarget {
+  transform: translateX(6px);
+  opacity: 0.7;
+}
+
+.legendDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.legendName {
+  font-weight: 500;
+}
+
+/* Grid Layout */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 8px;
+  animation: fadeUp 0.4s ease both;
+}
+
+/* Card Styles */
+.card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--compact-radius);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.card:hover {
+  background: var(--bg-hover);
+  border-color: var(--border);
+}
+
+.cardCurrent {
+  background: rgba(29, 78, 216, 0.08);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.cardSelected {
+  background: rgba(14, 165, 165, 0.08);
+  border-color: var(--accent);
+}
+
+.cardSwitching {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.card input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.email {
+  flex: 1;
+  min-width: 80px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.emailText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusIcon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.emailGradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+}
+
+.tier {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tierPro {
+  background: linear-gradient(135deg, #1d4ed8, #0ea5a5);
+  color: white;
+}
+
+.tierUltra {
+  background: linear-gradient(135deg, #f97316, #f59e0b);
+  color: white;
+}
+
+.tierFree {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.quotas {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 1;
+  flex-wrap: wrap;
+  min-width: 0;
+  max-height: 40px;
+  overflow: hidden;
+}
+
+.quota {
+  font-size: 11px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.quotaLabel {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.quotaHigh {
+  color: var(--success);
+}
+
+.quotaMedium {
+  color: var(--warning);
+}
+
+.quotaLow {
+  color: var(--danger);
+}
+
+.switchBtn {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--compact-radius);
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.switchBtn:hover:not(:disabled) {
+  color: var(--text-primary);
+  border-color: var(--border);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+}
+
+.switchBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.noteBtn {
+  width: auto;
+  max-width: 108px;
+  height: 22px;
+  padding: 0 7px;
+  gap: 4px;
+  border-radius: 999px;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.noteBtn span {
+  overflow: hidden;
+  color: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.noteBtn:hover,
+.noteBtnActive {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--bg-secondary));
+}
+
+.current {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--success);
+  color: white;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Legend item with color picker */
+.legendDotWrapper {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.legendDotWrapper:hover .legendDot {
+  transform: scale(1.2);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+}
+
+/* Color picker dropdown */
+.colorPicker {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--compact-radius);
+  box-shadow: var(--shadow-md);
+  z-index: 100;
+}
+
+/* Portal version - rendered to body */
+.colorPickerPortal {
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--compact-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.colorOption {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+  border: 2px solid transparent;
+}
+
+.colorOption:hover {
+  transform: scale(1.15);
+}
+
+.colorOptionActive {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-secondary);
+}
+
+/* Visibility toggle button */
+.visibilityBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: var(--compact-radius);
+  transition: all 0.15s;
+  opacity: 0.6;
+}
+
+.legendItem:hover .visibilityBtn {
+  opacity: 1;
+}
+
+.visibilityBtn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Hidden group state */
+.legendItemHidden {
+  opacity: 0.5;
+}
+
+.legendItemHidden .legendName {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+/* Dark mode */
+:global([data-theme="dark"]) .card {
+  background: rgba(30, 41, 59, 0.6);
+}
+
+:global([data-theme="dark"]) .card:hover {
+  background: rgba(51, 65, 85, 0.7);
+}
+
+:global([data-theme="dark"]) .cardCurrent {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+:global([data-theme="dark"]) .colorPicker,
+:global([data-theme="dark"]) .colorPickerPortal {
+  background: var(--bg-tertiary);
+  border-color: var(--border);
+}
+
+/* Animation */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

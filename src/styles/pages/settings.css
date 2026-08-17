@@ -1,0 +1,49 @@
+/* ============================================
+   Settings Page
+   ============================================ */
+
+.settings-page {
+  width: 100%;
+}
+
+.settings-section {
+  background: var(--bg-secondary);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.settings-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.settings-item-label {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.settings-item-value {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+

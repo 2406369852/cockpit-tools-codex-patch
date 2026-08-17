@@ -1,0 +1,59 @@
+[package]
+name = "cockpit-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["jlcodes"]
+license = "CC-BY-NC-SA-4.0"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+reqwest.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+url.workspace = true
+regex.workspace = true
+futures.workspace = true
+sysinfo.workspace = true
+log = "0.4"
+base64 = "0.22"
+md5 = "0.7"
+urlencoding = "2.1"
+lazy_static = "1.5"
+toml_edit = "0.20"
+rusqlite.workspace = true
+tracing-subscriber.workspace = true
+tracing-appender.workspace = true
+tracing-log.workspace = true
+trash.workspace = true
+tauri.workspace = true
+tauri-plugin-notification.workspace = true
+rand.workspace = true
+sha2.workspace = true
+ring = "0.17"
+tokio-tungstenite.workspace = true
+futures-util.workspace = true
+rustls.workspace = true
+rcgen.workspace = true
+tokio-rustls.workspace = true
+libc.workspace = true
+aes.workspace = true
+aes-gcm.workspace = true
+cbc.workspace = true
+pbkdf2.workspace = true
+sha1.workspace = true
+tiny_http.workspace = true
+rsa.workspace = true
+serde_urlencoded.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mac-notification-sys.workspace = true
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows.workspace = true
+junction.workspace = true

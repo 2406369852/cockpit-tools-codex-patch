@@ -1,0 +1,230 @@
+/* ============================================
+   Overview Page Styles
+   ============================================ */
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  animation: fadeUp 0.6s ease both;
+}
+
+.account-overview-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  min-height: 220px;
+}
+
+.account-overview-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(29, 78, 216, 0.3);
+}
+
+.account-overview-card.current {
+  border-color: var(--primary);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(29, 78, 216, 0.08));
+  box-shadow: 0 12px 32px rgba(29, 78, 216, 0.12);
+}
+
+[data-theme="dark"] .account-overview-card.current {
+  background: linear-gradient(145deg, rgba(59, 130, 246, 0.2), var(--bg-secondary));
+  box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15);
+  border-color: var(--primary);
+}
+
+.account-overview-card.current::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--primary);
+  border-radius: 4px 0 0 4px;
+}
+
+.account-overview-card.disabled {
+  opacity: 0.7;
+  background: var(--bg-tertiary);
+  border-style: dashed;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.account-email {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tier-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.tier-badge.pro {
+  background: linear-gradient(135deg, #4f46e5, #ec4899);
+  color: white;
+  border: none;
+}
+.tier-badge.pro-plus,
+.tier-badge.ultra {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+  border: none;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.action-btn.spin svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+.card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quota-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quota-mini-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.quota-mini-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.model-name {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.model-reset {
+  margin-left: 6px;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 11px;
+}
+
+.model-pct {
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.quota-mini-track {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.quota-mini-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.disabled-state, .empty-quota {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 20px 0;
+}
+
+.card-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+
+.switch-btn {
+  width: 100%;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.switch-btn:hover:not(:disabled) {
+  background: var(--text-primary);
+  color: white;
+  border-color: transparent;
+}
+
+.current-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 8px;
+}

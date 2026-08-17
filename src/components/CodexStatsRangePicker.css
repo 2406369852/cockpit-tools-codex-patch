@@ -1,0 +1,12 @@
+.codex-stats-range-picker { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.codex-stats-range-tabs { display: inline-flex; gap: 3px; padding: 3px; border: 1px solid var(--codex-api-border, var(--border)); border-radius: 9px; background: color-mix(in srgb, var(--bg-secondary) 82%, transparent); }
+.codex-stats-range-tabs button { min-width: 34px; height: 26px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--text-secondary); font-size: 11px; font-weight: 700; cursor: pointer; }
+.codex-stats-range-tabs button.active { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+.codex-stats-range-tabs button:disabled { cursor: not-allowed; opacity: .55; }
+.codex-stats-range-fields { display: inline-flex; align-items: end; gap: 6px; flex-wrap: wrap; }
+.codex-stats-range-fields label { display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); font-size: 11px; }
+.codex-stats-range-fields input { width: 132px; height: 30px; padding: 0 7px; border: 1px solid var(--codex-api-border, var(--border)); border-radius: 7px; background: var(--bg-surface); color: var(--text-primary); font: inherit; font-size: 11px; }
+.codex-stats-range-fields input:focus { outline: none; border-color: color-mix(in srgb, var(--primary) 48%, var(--border)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
+.codex-stats-range-separator { padding-bottom: 7px; color: var(--text-secondary); }
+.codex-stats-range-error { flex-basis: 100%; color: var(--danger, #dc2626); font-size: 11px; }
+.codex-stats-range-picker.is-compact .codex-stats-range-fields input { width: 124px; }

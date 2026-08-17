@@ -1,0 +1,874 @@
+use crate::models::codex::CodexAccount;
+use crate::models::ssh_server::{
+    SshAuthConfig, SshCodexSyncResult, SshCodexSyncStatus, SshServer, SshServerStore,
+};
+use crate::modules::{account, atomic_write, codex_account, logger};
+use base64::{engine::general_purpose::STANDARD, Engine};
+use serde::{Deserialize, Serialize};
+use std::path::PathBuf;
+use std::process::Stdio;
+use std::time::Duration;
+use tokio::io::AsyncWriteExt;
+use tokio::process::Command;
+use tokio::time::timeout;
+use uuid::Uuid;
+
+const SSH_SERVERS_FILE: &str = "ssh_servers.json";
+const STORE_VERSION: &str = "1";
+/// TCP/SSH 握手超时（传给 OpenSSH ConnectTimeout）
+const CONNECTION_TIMEOUT_SECS: u64 = 12;
+/// 测连整段命令墙钟超时
+const TEST_COMMAND_TIMEOUT_SECS: u64 = 20;
+/// 读写同步脚本墙钟超时
+const SYNC_TIMEOUT_SECS: u64 = 45;
+/// 远端 app-server reload 墙钟超时（略放宽；失败不阻断已校验写入）
+const APP_SERVER_RELOAD_TIMEOUT_SECS: u64 = 20;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SshServerList {
+    pub selected_server_id: Option<String>,
+    pub servers: Vec<SshServer>,
+}
+
+fn now_timestamp() -> i64 {
+    chrono::Utc::now().timestamp()
+}
+
+fn store_path() -> Result<PathBuf, String> {
+    Ok(account::get_data_dir()?.join(SSH_SERVERS_FILE))
+}
+
+fn default_codex_home() -> String {
+    "~/.codex".to_string()
+}
+
+fn contains_control_separator(value: &str) -> bool {
+    value.contains('\n') || value.contains('\r') || value.contains('\0')
+}
+
+fn normalize_text(value: &str) -> String {
+    value.trim().to_string()
+}
+
+fn sanitize_error(error: impl ToString) -> String {
+    let mut value = error.to_string();
+    for marker in [
+        "OPENAI_API_KEY",
+        "access_token",
+        "refresh_token",
+        "id_token",
+    ] {
+        value = redact_secret_values(&value, marker);
+    }
+    value
+}
+
+fn redact_secret_values(value: &str, marker: &str) -> String {
+    let mut output = String::with_capacity(value.len());
+    let mut remaining = value;
+    while let Some(index) = remaining.find(marker) {
+        let (before, matched_and_after) = remaining.split_at(index);
+        output.push_str(before);
+        output.push_str(marker);
+
+        let after_marker = &matched_and_after[marker.len()..];
+        let Some((delimiter_end, quote)) = secret_value_start(after_marker) else {
+            remaining = after_marker;
+            continue;
+        };
+        output.push_str(&after_marker[..delimiter_end]);
+
+        let value_start = delimiter_end;
+        let value_end = secret_value_end(&after_marker[value_start..], quote);
+        output.push_str("[redacted]");
+        remaining = &after_marker[value_start + value_end..];
+    }
+    output.push_str(remaining);
+    output
+}
+
+fn secret_value_start(value: &str) -> Option<(usize, Option<char>)> {
+    let mut chars = value.char_indices().peekable();
+    let mut end = 0;
+    while let Some((index, ch)) = chars.peek().copied() {
+        if ch.is_whitespace() || ch == '"' || ch == '\'' {
+            end = index + ch.len_utf8();
+            chars.next();
+        } else {
+            break;
+        }
+    }
+    let (_, delimiter) = chars.next()?;
+    if delimiter != '=' && delimiter != ':' {
+        return None;
+    }
+    end += delimiter.len_utf8();
+    while let Some((index, ch)) = chars.peek().copied() {
+        if ch.is_whitespace() {
+            end = index + ch.len_utf8();
+            chars.next();
+        } else {
+            break;
+        }
+    }
+    if let Some((index, quote @ ('"' | '\''))) = chars.peek().copied() {
+        return Some((index + quote.len_utf8(), Some(quote)));
+    }
+    Some((end, None))
+}
+
+fn secret_value_end(value: &str, quote: Option<char>) -> usize {
+    match quote {
+        Some(quote) => value.find(quote).unwrap_or(value.len()),
+        None => value
+            .find(|ch: char| ch.is_whitespace() || ch == ',' || ch == ';' || ch == '}')
+            .unwrap_or(value.len()),
+    }
+}
+
+fn validate_server(server: &SshServer) -> Result<(), String> {
+    if server.name.trim().is_empty() {
+        return Err("SSH server name is required".to_string());
+    }
+    for (label, value) in [
+        ("host", server.host.as_str()),
+        ("username", server.username.as_str()),
+        ("codex_home", server.codex_home.as_str()),
+    ] {
+        if value.trim().is_empty() {
+            return Err(format!("SSH server {} is required", label));
+        }
+        if contains_control_separator(value) {
+            return Err(format!(
+                "SSH server {} contains unsupported characters",
+                label
+            ));
+        }
+    }
+    if server.port == 0 {
+        return Err("SSH server port must be between 1 and 65535".to_string());
+    }
+    match &server.auth {
+        SshAuthConfig::Agent => {}
+        SshAuthConfig::PrivateKeyFile { path } => {
+            if path.trim().is_empty() {
+                return Err("SSH private key path is required".to_string());
+            }
+            if contains_control_separator(path) {
+                return Err("SSH private key path contains unsupported characters".to_string());
+            }
+        }
+    }
+    Ok(())
+}
+
+fn normalize_server(
+    mut server: SshServer,
+    existing: Option<&SshServer>,
+) -> Result<SshServer, String> {
+    let now = now_timestamp();
+    if server.id.trim().is_empty() {
+        server.id = Uuid::new_v4().to_string();
+    } else {
+        server.id = normalize_text(&server.id);
+    }
+    server.name = normalize_text(&server.name);
+    server.host = normalize_text(&server.host);
+    server.username = normalize_text(&server.username);
+    server.codex_home = normalize_text(&server.codex_home);
+    if server.codex_home.is_empty() {
+        server.codex_home = default_codex_home();
+    }
+    if server.port == 0 {
+        server.port = 22;
+    }
+    if server.created_at <= 0 {
+        server.created_at = existing.map(|item| item.created_at).unwrap_or(now);
+    }
+    server.updated_at = now;
+    if let Some(existing) = existing {
+        if server.last_sync.is_none() {
+            server.last_sync = existing.last_sync.clone();
+        }
+    }
+    validate_server(&server)?;
+    Ok(server)
+}
+
+pub fn load_store() -> Result<SshServerStore, String> {
+    let path = store_path()?;
+    if !path.exists() {
+        return Ok(SshServerStore::default());
+    }
+    let content = std::fs::read_to_string(&path)
+        .map_err(|e| format!("Failed to read SSH servers store: {}", e))?;
+    let mut store: SshServerStore = atomic_write::parse_json_with_auto_restore(&path, &content)
+        .map_err(|e| format!("Failed to parse SSH servers store: {}", e))?;
+    if store.version.trim().is_empty() {
+        store.version = STORE_VERSION.to_string();
+    }
+    if let Some(selected_id) = store.selected_server_id.clone() {
+        if !store.servers.iter().any(|server| server.id == selected_id) {
+            store.selected_server_id = None;
+        }
+    }
+    Ok(store)
+}
+
+fn save_store(store: &SshServerStore) -> Result<(), String> {
+    let path = store_path()?;
+    let content = serde_json::to_string_pretty(store)
+        .map_err(|e| format!("Failed to serialize SSH servers store: {}", e))?;
+    atomic_write::write_string_atomic(&path, &content)
+}
+
+pub fn list_servers() -> Result<SshServerList, String> {
+    let store = load_store()?;
+    Ok(SshServerList {
+        selected_server_id: store.selected_server_id,
+        servers: store.servers,
+    })
+}
+
+pub fn upsert_server(server: SshServer) -> Result<SshServerList, String> {
+    let mut store = load_store()?;
+    store.version = STORE_VERSION.to_string();
+    let existing_index = store.servers.iter().position(|item| item.id == server.id);
+    let existing = existing_index.and_then(|index| store.servers.get(index));
+    let server = normalize_server(server, existing)?;
+    if let Some(index) = existing_index {
+        store.servers[index] = server;
+    } else {
+        store.servers.push(server);
+    }
+    save_store(&store)?;
+    list_servers()
+}
+
+pub fn delete_server(server_id: &str) -> Result<SshServerList, String> {
+    let mut store = load_store()?;
+    let server_id = server_id.trim();
+    store.servers.retain(|server| server.id != server_id);
+    if store.selected_server_id.as_deref() == Some(server_id) {
+        store.selected_server_id = None;
+    }
+    save_store(&store)?;
+    list_servers()
+}
+
+pub fn select_server(server_id: Option<String>) -> Result<SshServerList, String> {
+    let mut store = load_store()?;
+    let selected = server_id.and_then(|value| {
+        let trimmed = value.trim().to_string();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed)
+        }
+    });
+    if let Some(selected_id) = selected.as_deref() {
+        if !store.servers.iter().any(|server| server.id == selected_id) {
+            return Err(format!("SSH server not found: {}", selected_id));
+        }
+    }
+    store.selected_server_id = selected;
+    save_store(&store)?;
+    list_servers()
+}
+
+fn selected_server_from_store(store: &SshServerStore) -> Option<SshServer> {
+    let selected_id = store.selected_server_id.as_deref()?;
+    store
+        .servers
+        .iter()
+        .find(|server| server.id == selected_id)
+        .cloned()
+}
+
+/// OpenSSH 参数：非交互、握手超时与私钥 IdentitiesOnly，避免 agent 里一堆 key 拖慢/超时。
+fn build_ssh_args(server: &SshServer, connect_timeout_secs: u64) -> Vec<String> {
+    let connect_timeout = connect_timeout_secs.clamp(3, 30);
+    let mut args = vec![
+        "-p".to_string(),
+        server.port.to_string(),
+        "-o".to_string(),
+        "BatchMode=yes".to_string(),
+        "-o".to_string(),
+        "NumberOfPasswordPrompts=0".to_string(),
+        "-o".to_string(),
+        format!("ConnectTimeout={}", connect_timeout),
+        "-o".to_string(),
+        "ServerAliveInterval=5".to_string(),
+        "-o".to_string(),
+        "ServerAliveCountMax=2".to_string(),
+    ];
+    if let SshAuthConfig::PrivateKeyFile { path } = &server.auth {
+        // 与手动 `ssh -o IdentitiesOnly=yes -i key` 对齐：只用指定私钥，不试 agent 其它身份
+        args.push("-o".to_string());
+        args.push("IdentitiesOnly=yes".to_string());
+        args.push("-i".to_string());
+        args.push(path.clone());
+    }
+    args.push(format!("{}@{}", server.username, server.host));
+    args
+}
+
+async fn run_ssh(
+    server: &SshServer,
+    timeout_secs: u64,
+    remote_args: &[&str],
+    stdin_payload: Option<String>,
+) -> Result<String, String> {
+    // 握手超时与整段墙钟分开：ConnectTimeout 用连接上限，命令本身可更长
+    let connect_timeout = CONNECTION_TIMEOUT_SECS.min(timeout_secs);
+    let mut command = Command::new("ssh");
+    command.args(build_ssh_args(server, connect_timeout));
+    command.args(remote_args);
+    command.stdout(Stdio::piped());
+    command.stderr(Stdio::piped());
+    if stdin_payload.is_some() {
+        command.stdin(Stdio::piped());
+    }
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        command.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let mut child = command
+        .spawn()
+        .map_err(|e| format!("ssh_binary_missing: {}", e))?;
+    if let Some(payload) = stdin_payload {
+        let mut stdin = child
+            .stdin
+            .take()
+            .ok_or_else(|| "ssh_connection_failed: stdin unavailable".to_string())?;
+        stdin
+            .write_all(payload.as_bytes())
+            .await
+            .map_err(|e| format!("ssh_connection_failed: {}", e))?;
+        // 尽快关闭 stdin，避免远端 sh -s 一直等 EOF
+        drop(stdin);
+    }
+
+    let output = timeout(Duration::from_secs(timeout_secs), child.wait_with_output())
+        .await
+        .map_err(|_| "ssh_connection_failed: SSH command timed out".to_string())?
+        .map_err(|e| format!("ssh_connection_failed: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        let category = if stderr.to_ascii_lowercase().contains("permission denied") {
+            "ssh_auth_failed"
+        } else {
+            "ssh_connection_failed"
+        };
+        return Err(format!(
+            "{}: {}",
+            category,
+            sanitize_error(if stderr.is_empty() {
+                format!("exit status {}", output.status)
+            } else {
+                stderr
+            })
+        ));
+    }
+
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
+pub async fn test_connection(server_id: &str) -> Result<String, String> {
+    let store = load_store()?;
+    let server = store
+        .servers
+        .iter()
+        .find(|server| server.id == server_id)
+        .cloned()
+        .ok_or_else(|| format!("SSH server not found: {}", server_id))?;
+    let output = run_ssh(
+        &server,
+        TEST_COMMAND_TIMEOUT_SECS,
+        &["printf", "cockpit-tools-ssh-ok"],
+        None,
+    )
+    .await?;
+    if output.trim() == "cockpit-tools-ssh-ok" {
+        Ok(output)
+    } else {
+        Err("ssh_connection_failed: unexpected SSH test output".to_string())
+    }
+}
+
+async fn read_remote_config_toml(server: &SshServer) -> Result<Option<String>, String> {
+    let script = r#"set -eu
+codex_home=$1
+case "$codex_home" in
+  "~") codex_home="$HOME" ;;
+  "~/"*) codex_home="$HOME/${{codex_home#~/}}" ;;
+esac
+target="$codex_home/config.toml"
+if [ -f "$target" ]; then
+  printf '__COCKPIT_EXISTS__\n'
+  cat "$target"
+elif [ -e "$target" ]; then
+  printf 'config.toml is not a regular file\n' >&2
+  exit 3
+else
+  printf '__COCKPIT_MISSING__\n'
+fi
+"#;
+    let output = run_ssh(
+        server,
+        SYNC_TIMEOUT_SECS,
+        &["sh", "-s", "--", &server.codex_home],
+        Some(script.to_string()),
+    )
+    .await
+    .map_err(|e| format!("ssh_remote_read_failed: {}", sanitize_error(e)))?;
+    if let Some(rest) = output.strip_prefix("__COCKPIT_EXISTS__\n") {
+        return Ok(Some(rest.to_string()));
+    }
+    if output.trim() == "__COCKPIT_MISSING__" {
+        return Ok(None);
+    }
+    Err("ssh_remote_read_failed: unexpected remote read response".to_string())
+}
+
+async fn upload_and_verify_bundle(
+    server: &SshServer,
+    bundle: &codex_account::CodexAccountProjectionBundle,
+) -> Result<(), String> {
+    let mut payload = String::new();
+    for file in &bundle.files {
+        payload.push_str(&format!(
+            "{}\t{:o}\t{}\t{}\n",
+            file.relative_path,
+            file.mode,
+            file.sha256,
+            STANDARD.encode(file.content.as_bytes())
+        ));
+    }
+    let script = format!(
+        r#"set -eu
+codex_home=$1
+case "$codex_home" in
+  "~") codex_home="$HOME" ;;
+  "~/"*) codex_home="$HOME/${{codex_home#~/}}" ;;
+esac
+mkdir -p "$codex_home"
+chmod 700 "$codex_home" 2>/dev/null || true
+tmp_dir="$codex_home/.cockpit-codex-sync.$$"
+rm -rf "$tmp_dir"
+mkdir -p "$tmp_dir"
+cleanup() {{ rm -rf "$tmp_dir"; }}
+trap cleanup EXIT INT TERM
+cat <<'__COCKPIT_CODEX_PAYLOAD__' | while IFS='	' read -r rel mode expected encoded; do
+{payload}__COCKPIT_CODEX_PAYLOAD__
+  [ -n "$rel" ] || continue
+  case "$rel" in
+    auth.json|config.toml|.cockpit_codex_auth.json) ;;
+    *) printf 'invalid relative path: %s\n' "$rel" >&2; exit 4 ;;
+  esac
+  tmp="$tmp_dir/$rel"
+  target="$codex_home/$rel"
+  if ! printf '%s' "$encoded" | base64 -d > "$tmp" 2>/dev/null; then
+    printf '%s' "$encoded" | base64 -D > "$tmp"
+  fi
+  chmod "$mode" "$tmp" 2>/dev/null || true
+  mv "$tmp" "$target"
+  chmod "$mode" "$target" 2>/dev/null || true
+  actual="$(sha256sum "$target" 2>/dev/null | awk '{{print $1}}' || shasum -a 256 "$target" | awk '{{print $1}}')"
+  if [ "$actual" != "$expected" ]; then
+    printf 'hash mismatch for %s\n' "$rel" >&2
+    exit 5
+  fi
+  printf '%s\t%s\n' "$rel" "$actual"
+done
+"#
+    );
+    let output = run_ssh(
+        server,
+        SYNC_TIMEOUT_SECS,
+        &["sh", "-s", "--", &server.codex_home],
+        Some(script),
+    )
+    .await
+    .map_err(|e| format!("ssh_remote_write_failed: {}", sanitize_error(e)))?;
+
+    for file in &bundle.files {
+        let verified = output
+            .lines()
+            .any(|line| line == format!("{}\t{}", file.relative_path, file.sha256));
+        if !verified {
+            return Err(format!(
+                "ssh_remote_verify_failed: missing verification for {}",
+                file.relative_path
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// 远端刷新 Codex app-server：daemon restart 必须有硬超时，避免整段 SSH 被挂死。
+fn reload_app_server_script() -> &'static str {
+    r#"set +e
+# 1) 优先 daemon restart，但限制 5s，防止 codex CLI 卡住拖垮同步
+if command -v codex >/dev/null 2>&1; then
+  if command -v timeout >/dev/null 2>&1; then
+    timeout 5 codex app-server daemon restart >/dev/null 2>&1
+    rc=$?
+  else
+    codex app-server daemon restart >/dev/null 2>&1
+    rc=$?
+  fi
+  if [ "${rc:-1}" -eq 0 ]; then
+    printf 'daemon-restarted\n'
+    exit 0
+  fi
+fi
+
+# 2) 尝试结束仍在跑的 app-server（没有则直接成功）
+pids="$(ps -u "$(id -u)" -o pid= -o args= 2>/dev/null | awk '
+/codex app-server --listen/ || /codex app-server proxy/ { print $1 }
+' || true)"
+pids="$(printf '%s\n' "$pids" | tr -s '[:space:]' ' ' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+if [ -z "$pids" ]; then
+  printf 'no-app-server\n'
+  exit 0
+fi
+
+# shellcheck disable=SC2086
+kill -TERM $pids 2>/dev/null || true
+sleep 1
+for pid in $pids; do
+  if kill -0 "$pid" 2>/dev/null; then
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+done
+printf 'app-server-terminated\n'
+exit 0
+"#
+}
+
+async fn reload_remote_codex_app_server(server: &SshServer) -> Result<(), String> {
+    let output = run_ssh(
+        server,
+        APP_SERVER_RELOAD_TIMEOUT_SECS,
+        &["sh", "-s"],
+        Some(reload_app_server_script().to_string()),
+    )
+    .await
+    .map_err(|e| format!("ssh_remote_app_server_reload_failed: {}", sanitize_error(e)))?;
+
+    let status = output
+        .lines()
+        .map(str::trim)
+        .find(|line| !line.is_empty())
+        .unwrap_or("");
+    if matches!(
+        status,
+        "daemon-restarted" | "app-server-terminated" | "no-app-server"
+    ) {
+        Ok(())
+    } else {
+        Err(format!(
+            "ssh_remote_app_server_reload_failed: unexpected reload response: {}",
+            sanitize_error(status)
+        ))
+    }
+}
+
+fn result_from_status(server: &SshServer, status: SshCodexSyncStatus) -> SshCodexSyncResult {
+    SshCodexSyncResult {
+        server_id: server.id.clone(),
+        server_name: server.name.clone(),
+        account_id: status.account_id,
+        account_email: status.account_email,
+        token_generation: status.token_generation,
+        bundle_hash: status.bundle_hash,
+        verified: status.verified,
+        error: status.error,
+        synced_at: status.synced_at,
+    }
+}
+
+fn persist_sync_status(
+    server_id: &str,
+    status: SshCodexSyncStatus,
+) -> Result<SshCodexSyncResult, String> {
+    let mut store = load_store()?;
+    let index = store
+        .servers
+        .iter()
+        .position(|server| server.id == server_id)
+        .ok_or_else(|| format!("SSH server not found: {}", server_id))?;
+    store.servers[index].last_sync = Some(status.clone());
+    store.servers[index].updated_at = now_timestamp();
+    let result = result_from_status(&store.servers[index], status);
+    save_store(&store)?;
+    Ok(result)
+}
+
+async fn sync_account_to_server(server: SshServer, account: &CodexAccount) -> SshCodexSyncResult {
+    let synced_at = now_timestamp();
+    let sync_attempt = async {
+        validate_server(&server)?;
+        let existing_config = read_remote_config_toml(&server).await?;
+        let bundle =
+            codex_account::build_projection_bundle_for_remote(account, existing_config.as_deref())
+                .map_err(|e| format!("codex_bundle_failed: {}", sanitize_error(e)))?;
+        // 鉴权落盘 + 校验是硬条件
+        upload_and_verify_bundle(&server, &bundle).await?;
+        // reload 是软条件：远端没 codex / 进程卡死 / 超时不应把已成功写入判失败
+        if let Err(reload_error) = reload_remote_codex_app_server(&server).await {
+            logger::log_warn(&format!(
+                "[Codex SSH] 远端 app-server 刷新失败（鉴权已写入）: server_id={}, error={}",
+                server.id, reload_error
+            ));
+        }
+        Ok::<_, String>(bundle)
+    }
+    .await;
+
+    let status = match sync_attempt {
+        Ok(bundle) => SshCodexSyncStatus {
+            account_id: bundle.account_id,
+            account_email: bundle.account_email,
+            token_generation: bundle.token_generation,
+            bundle_hash: bundle.bundle_hash,
+            synced_at,
+            verified: true,
+            error: None,
+        },
+        Err(error) => SshCodexSyncStatus {
+            account_id: account.id.clone(),
+            account_email: account.email.clone(),
+            token_generation: account.token_generation,
+            bundle_hash: String::new(),
+            synced_at,
+            verified: false,
+            error: Some(sanitize_error(error)),
+        },
+    };
+
+    match persist_sync_status(&server.id, status.clone()) {
+        Ok(result) => result,
+        Err(error) => {
+            logger::log_warn(&format!(
+                "[Codex SSH] 保存同步状态失败: server_id={}, error={}",
+                server.id, error
+            ));
+            result_from_status(&server, status)
+        }
+    }
+}
+
+pub async fn sync_current_account_to_server(
+    server_id: Option<String>,
+) -> Result<SshCodexSyncResult, String> {
+    let account = codex_account::get_current_account()
+        .ok_or_else(|| "codex_bundle_failed: no current Codex account".to_string())?;
+    let store = load_store()?;
+    let server = if let Some(server_id) = server_id
+        .as_deref()
+        .map(str::trim)
+        .filter(|id| !id.is_empty())
+    {
+        store
+            .servers
+            .iter()
+            .find(|server| server.id == server_id)
+            .cloned()
+            .ok_or_else(|| format!("SSH server not found: {}", server_id))?
+    } else {
+        selected_server_from_store(&store)
+            .ok_or_else(|| "ssh_not_configured: no selected SSH server".to_string())?
+    };
+    Ok(sync_account_to_server(server, &account).await)
+}
+
+pub async fn sync_selected_server_after_codex_switch(
+    account: &CodexAccount,
+) -> Option<SshCodexSyncResult> {
+    let store = match load_store() {
+        Ok(store) => store,
+        Err(error) => {
+            logger::log_warn(&format!("[Codex SSH] 读取 SSH 服务器配置失败: {}", error));
+            return None;
+        }
+    };
+    let Some(server) = selected_server_from_store(&store) else {
+        return None;
+    };
+    if !server.sync_on_codex_switch {
+        return None;
+    }
+    Some(sync_account_to_server(server, account).await)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    struct StoreBackup {
+        path: PathBuf,
+        original: Option<Vec<u8>>,
+    }
+
+    impl StoreBackup {
+        fn capture() -> Self {
+            let path = store_path().expect("resolve ssh server store path");
+            let original = std::fs::read(&path).ok();
+            Self { path, original }
+        }
+    }
+
+    impl Drop for StoreBackup {
+        fn drop(&mut self) {
+            if let Some(original) = self.original.as_ref() {
+                if let Some(parent) = self.path.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                let _ = std::fs::write(&self.path, original);
+            } else if self.path.exists() {
+                let _ = std::fs::remove_file(&self.path);
+            }
+        }
+    }
+
+    fn valid_server() -> SshServer {
+        SshServer {
+            id: "server-1".to_string(),
+            name: "Dev".to_string(),
+            host: "example.com".to_string(),
+            port: 22,
+            username: "alice".to_string(),
+            codex_home: "~/.codex".to_string(),
+            auth: SshAuthConfig::Agent,
+            sync_on_codex_switch: true,
+            created_at: 1,
+            updated_at: 1,
+            last_sync: None,
+        }
+    }
+
+    #[test]
+    fn validation_rejects_empty_host() {
+        let mut server = valid_server();
+        server.host.clear();
+        assert!(validate_server(&server).is_err());
+    }
+
+    #[test]
+    fn validation_rejects_private_key_without_path() {
+        let mut server = valid_server();
+        server.auth = SshAuthConfig::PrivateKeyFile {
+            path: String::new(),
+        };
+        assert!(validate_server(&server).is_err());
+    }
+
+    #[test]
+    fn ssh_args_include_batch_mode_without_disabling_host_key_checks() {
+        let server = valid_server();
+        let args = build_ssh_args(&server, 10);
+        assert!(args.contains(&"BatchMode=yes".to_string()));
+        assert!(args.contains(&"ConnectTimeout=10".to_string()));
+        assert!(!args
+            .iter()
+            .any(|arg| arg.contains("StrictHostKeyChecking=no")));
+        // agent 模式不强制 IdentitiesOnly
+        assert!(!args.iter().any(|arg| arg == "IdentitiesOnly=yes"));
+    }
+
+    #[test]
+    fn ssh_args_use_identities_only_for_private_key() {
+        let mut server = valid_server();
+        server.auth = SshAuthConfig::PrivateKeyFile {
+            path: "/tmp/id_test".to_string(),
+        };
+        let args = build_ssh_args(&server, 12);
+        assert!(args
+            .windows(2)
+            .any(|w| w[0] == "-o" && w[1] == "IdentitiesOnly=yes"));
+        assert!(args
+            .windows(2)
+            .any(|w| w[0] == "-i" && w[1] == "/tmp/id_test"));
+    }
+
+    #[test]
+    fn app_server_reload_script_restarts_or_terminates_codex_app_server() {
+        let script = reload_app_server_script();
+        assert!(script.contains("codex app-server daemon restart"));
+        assert!(script.contains("timeout 5 codex app-server daemon restart"));
+        assert!(script.contains("codex app-server --listen"));
+        assert!(script.contains("codex app-server proxy"));
+        assert!(script.contains("no-app-server"));
+        assert!(!script.contains("pkill"));
+    }
+
+    #[test]
+    fn sanitize_error_redacts_secret_values() {
+        let error = r#"access_token=abc123 refresh_token: 'def456' {"id_token":"ghi789","OPENAI_API_KEY":"sk-test"}"#;
+        let sanitized = sanitize_error(error);
+        assert!(sanitized.contains("access_token=[redacted]"));
+        assert!(sanitized.contains("refresh_token: '[redacted]'"));
+        assert!(sanitized.contains(r#""id_token":"[redacted]""#));
+        assert!(sanitized.contains(r#""OPENAI_API_KEY":"[redacted]""#));
+        assert!(!sanitized.contains("abc123"));
+        assert!(!sanitized.contains("def456"));
+        assert!(!sanitized.contains("ghi789"));
+        assert!(!sanitized.contains("sk-test"));
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn live_ssh_own_syncs_current_codex_account() {
+        if std::env::var("COCKPIT_LIVE_SSH_OWN_SYNC").ok().as_deref() != Some("1") {
+            eprintln!("set COCKPIT_LIVE_SSH_OWN_SYNC=1 to run the live own SSH sync test");
+            return;
+        }
+
+        let current = codex_account::get_current_account()
+            .expect("a current Codex account is required for live SSH sync");
+        let _backup = StoreBackup::capture();
+        let now = now_timestamp();
+        let server = SshServer {
+            id: "live-ssh-own".to_string(),
+            name: "own".to_string(),
+            host: "own".to_string(),
+            port: 22,
+            username: "ubuntu".to_string(),
+            codex_home: "~/.codex".to_string(),
+            auth: SshAuthConfig::Agent,
+            sync_on_codex_switch: true,
+            created_at: now,
+            updated_at: now,
+            last_sync: None,
+        };
+        let store = SshServerStore {
+            version: STORE_VERSION.to_string(),
+            selected_server_id: Some(server.id.clone()),
+            servers: vec![server.clone()],
+        };
+        save_store(&store).expect("write live SSH server store");
+
+        test_connection(&server.id)
+            .await
+            .expect("live SSH connection test should pass");
+        let result = sync_current_account_to_server(Some(server.id.clone()))
+            .await
+            .expect("live SSH sync should return a result");
+
+        assert!(
+            result.verified,
+            "live SSH sync should verify remote hashes: {:?}",
+            result.error
+        );
+        assert_eq!(result.account_id, current.id);
+        assert_eq!(result.account_email, current.email);
+        assert_eq!(result.token_generation, current.token_generation);
+    }
+}

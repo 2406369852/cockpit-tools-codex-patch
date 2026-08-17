@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Cockpit Tools Codex Patch request flow</title>
+  <desc id="desc">本地客户端经过 Cockpit Tools API 服务，由账号调度器选择账号并由 Sidecar 访问上游；图片、429 和热更新分别经过增强逻辑。</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f7faff"/>
+      <stop offset="1" stop-color="#eefcf7"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" x2="1">
+      <stop offset="0" stop-color="#2563eb"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#64748b"/>
+    </marker>
+    <style>
+      .title { font: 700 30px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .subtitle { font: 400 16px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #475569; }
+      .box-title { font: 700 19px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f172a; }
+      .box-text { font: 400 15px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #334155; }
+      .pill { font: 600 14px "Segoe UI", "Microsoft YaHei", sans-serif; fill: #0f766e; }
+    </style>
+  </defs>
+  <rect width="1200" height="620" rx="28" fill="url(#bg)"/>
+  <text x="60" y="65" class="title">Codex API 增强版：请求、调度与热更新</text>
+  <text x="60" y="96" class="subtitle">本地客户端只连接 127.0.0.1；增强逻辑集中在 API 服务和 Sidecar 之间。</text>
+
+  <rect x="60" y="170" width="225" height="130" rx="20" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="84" y="212" class="box-title">客户端</text>
+  <text x="84" y="242" class="box-text">OpenAI 兼容 SDK</text>
+  <text x="84" y="267" class="box-text">/v1/responses</text>
+  <text x="84" y="289" class="box-text">/v1/images/*</text>
+
+  <rect x="365" y="145" width="300" height="180" rx="22" fill="#fff" stroke="url(#accent)" stroke-width="4"/>
+  <text x="395" y="190" class="box-title">Cockpit API Service</text>
+  <text x="395" y="222" class="box-text">图片能力判断与友好提示</text>
+  <text x="395" y="247" class="box-text">429 立即重试 / 多账号轮转</text>
+  <text x="395" y="272" class="box-text">quota_low_first 调度</text>
+  <text x="395" y="297" class="box-text">actual_spend_cny 成本统计</text>
+
+  <rect x="745" y="170" width="225" height="130" rx="20" fill="#fff" stroke="#cbd5e1" stroke-width="2"/>
+  <text x="769" y="212" class="box-title">Sidecar</text>
+  <text x="769" y="242" class="box-text">账号池与上游请求</text>
+  <text x="769" y="267" class="box-text">父进程租约监控</text>
+  <text x="769" y="289" class="box-text">响应与用量记录</text>
+
+  <rect x="1010" y="170" width="135" height="130" rx="20" fill="#0f766e"/>
+  <text x="1035" y="214" class="box-title" fill="#fff">上游</text>
+  <text x="1035" y="246" class="box-text" fill="#ecfeff">Codex / 图片</text>
+  <text x="1035" y="271" class="box-text" fill="#ecfeff">权限与额度</text>
+
+  <path d="M285 235 H355" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M665 235 H735" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+  <path d="M970 235 H1000" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <rect x="95" y="405" width="300" height="125" rx="20" fill="#eff6ff" stroke="#93c5fd" stroke-width="2"/>
+  <text x="120" y="445" class="box-title">图片请求</text>
+  <text x="120" y="475" class="box-text">识别 generations / edits</text>
+  <text x="120" y="500" class="box-text">按账号能力显示或隐藏模型</text>
+
+  <rect x="450" y="405" width="300" height="125" rx="20" fill="#fff7ed" stroke="#fdba74" stroke-width="2"/>
+  <text x="475" y="445" class="box-title">429 请求</text>
+  <text x="475" y="475" class="box-text">零等待立即重试</text>
+  <text x="475" y="500" class="box-text">可用账号优先轮转</text>
+
+  <rect x="805" y="405" width="300" height="125" rx="20" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+  <text x="830" y="445" class="box-title">应用更新</text>
+  <text x="830" y="475" class="box-text">临时 Sidecar + parent lease</text>
+  <text x="830" y="500" class="box-text">失败自动回滚旧版</text>
+
+  <text x="60" y="580" class="pill">不绕过上游权限、额度或服务条款；增强逻辑只改善本地调度与可见性。</text>
+</svg>
