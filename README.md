@@ -30,6 +30,12 @@
 
 ![Codex 多实例](docs/images/codex_instances.png)
 
+实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
+
+![Codex 额度和成本字段](docs/images/codex_accounts_quota_private-masked.png)
+
+![Codex API 用量卡片](docs/images/codex_api_usage_private-masked.png)
+
 ## Windows 安装
 
 在 [Releases](../../releases) 下载 `Cockpit.Tools_1.3.21_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。

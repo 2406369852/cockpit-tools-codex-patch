@@ -28,6 +28,12 @@
 
 ![多实例](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex_instances.png)
 
+实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
+
+![额度和成本字段](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex_accounts_quota_private-masked.png)
+
+![API 用量卡片](https://raw.githubusercontent.com/2406369852/cockpit-tools-codex-patch/main/docs/images/codex_api_usage_private-masked.png)
+
 ## Windows 下载
 
 文件：`Cockpit.Tools_1.3.21_x64-setup.exe`
