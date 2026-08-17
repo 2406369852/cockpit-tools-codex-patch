@@ -6,7 +6,7 @@
 
 选择 `gpt-image-2` 后，程序会先识别当前服务和账号是否具备图片能力，再决定是否显示图片入口。调用 `/v1/images/generations`、`/v1/images/edits` 或 Responses 图片工具时，如果上游账号没有权限或额度不足，会返回可操作的提示，而不是只显示笼统的“请求失败”。
 
-![图片能力、429 重试和热更新的请求链路](images/codex-patch-flow.svg)
+![图片能力、429 重试和热更新的请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex-patch-flow.svg?raw=true)
 
 图中“图片能力”分支表示：客户端请求进入本地 Codex API 后，先经过模型/能力判断，再转发到上游。这个判断只改善提示和兼容性，不会绕过上游权限、套餐或额度。
 
@@ -35,13 +35,13 @@
 
 它不是 OpenAI 官方账单，也不代表官方结算价格。
 
-![Codex 账号额度与卡片视图](images/codex_list.png)
+![Codex 账号额度与卡片视图](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_list.png?raw=true)
 
 上图展示账号卡片、5 小时/周额度、重置时间和账号状态。实际价格与倍率在启用成本统计后出现在同一组账号信息中。
 
 下面是本次补丁的实际界面截图（邮箱、接口地址、团队名和用户 ID 已打马赛克）：
 
-![已脱敏的 Codex 额度、价格和倍率界面](images/codex_accounts_quota_private-masked.png)
+![已脱敏的 Codex 额度、价格和倍率界面](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_accounts_quota_private-masked.png?raw=true)
 
 这张图中的字段含义是：
 
@@ -49,7 +49,7 @@
 - `req`、`M`、`A`：请求数、估算 token/用量和本地 API 估算金额（USD）。
 - `已用美元`、`实际价格`、`倍率`：本地估算值、手动填写的人民币价格，以及用于对比的倍率。
 
-![已脱敏的 Codex API 用量和成本卡片](images/codex_api_usage_private-masked.png)
+![已脱敏的 Codex API 用量和成本卡片](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_api_usage_private-masked.png?raw=true)
 
 上面两张截图只用于说明界面字段；其中的账号、额度和金额是示例数据，不代表任何官方账单。
 
@@ -57,7 +57,7 @@
 
 Codex 实例可以独立配置账号并行运行。实例页面展示运行状态、当前账号、额度摘要、PID 和启动/停止/编辑操作；切换账号不会要求用户手动改配置文件。
 
-![Codex 多实例管理](images/codex_instances.png)
+![Codex 多实例管理](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/images/codex_instances.png?raw=true)
 
 ## 六、Windows 热更新与失败恢复
 
