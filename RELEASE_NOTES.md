@@ -18,7 +18,7 @@
 
 请求链路、图片能力判断、429 重试和 Sidecar 热交接：
 
-![请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
+![请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.png)
 
 账号额度与成本统计界面：
 

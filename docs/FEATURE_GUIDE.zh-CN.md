@@ -6,7 +6,7 @@
 
 选择 `gpt-image-2` 后，程序会先识别当前服务和账号是否具备图片能力，再决定是否显示图片入口。调用 `/v1/images/generations`、`/v1/images/edits` 或 Responses 图片工具时，如果上游账号没有权限或额度不足，会返回可操作的提示，而不是只显示笼统的“请求失败”。
 
-![图片能力、429 重试和热更新的请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
+![图片能力、429 重试和热更新的请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.png)
 
 图中“图片能力”分支表示：客户端请求进入本地 Codex API 后，先经过模型/能力判断，再转发到上游。这个判断只改善提示和兼容性，不会绕过上游权限、套餐或额度。
 

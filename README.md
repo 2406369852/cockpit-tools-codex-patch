@@ -22,7 +22,7 @@
 
 请求链路和增强点如下：
 
-![Codex API 增强请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.svg)
+![Codex API 增强请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.png)
 
 账号额度与多实例管理界面示例：
 
