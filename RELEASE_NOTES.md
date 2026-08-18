@@ -38,6 +38,8 @@
 
 文件：`Cockpit.Tools_1.3.21_x64-setup.exe`
 
+这是 Windows 安装程序，不是压缩包。下载后直接双击安装；完整步骤见[中文使用说明](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/USAGE.zh-CN.md)。
+
 SHA256：
 
 `7F0EA34199403485DCC2E6F33729FF29D93B44CC3AA09E1618EF5C7EB9C6BBB2`

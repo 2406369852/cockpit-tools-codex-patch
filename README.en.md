@@ -26,7 +26,7 @@ This release does not force-expose WM / `gpt-5.6-sol-wm`. Image permissions, acc
 
 ## Install and build
 
-Download `Cockpit.Tools_1.3.21_x64-setup.exe` from [Releases](../../releases). The installer is currently unsigned, so Windows SmartScreen may warn; verify the SHA256 shown on the Release page.
+Download `Cockpit.Tools_1.3.21_x64-setup.exe` from [Releases](../../releases). This is a Windows installer, not a zip archive: double-click it to install, then launch Cockpit Tools from the Start menu or desktop. The installer is currently unsigned, so Windows SmartScreen may warn; verify the SHA256 shown on the Release page.
 
 Requirements: Node.js 18+, npm 9+, Rust, Go, and Windows MSVC Build Tools.
 

@@ -40,6 +40,8 @@
 
 在 [Releases](../../releases) 下载 `Cockpit.Tools_1.3.21_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。
 
+这是 Windows 安装程序（`.exe`），不是压缩包：下载后直接双击安装，再从开始菜单或桌面启动。完整的安装、API 配置、图片使用和更新步骤见[中文使用说明](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/USAGE.zh-CN.md)。
+
 首次更新前建议备份：
 
 - `%USERPROFILE%\.antigravity_cockpit`
