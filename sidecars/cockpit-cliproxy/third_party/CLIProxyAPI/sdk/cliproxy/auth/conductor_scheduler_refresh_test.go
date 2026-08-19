@@ -173,14 +173,12 @@ func TestManager_PickNext_RebuildsSchedulerAfterModelCooldownError(t *testing.T)
 		t.Fatalf("register old auth: %v", errRegister)
 	}
 
-	retryAfter := time.Minute
 	manager.MarkResult(ctx, Result{
-		AuthID:     oldAuth.ID,
-		Provider:   "gemini",
-		Model:      "scheduler-cooldown-rebuild-model",
-		Success:    false,
-		Error:      &Error{HTTPStatus: http.StatusTooManyRequests, Message: "quota"},
-		RetryAfter: &retryAfter,
+		AuthID:   oldAuth.ID,
+		Provider: "gemini",
+		Model:    "scheduler-cooldown-rebuild-model",
+		Success:  false,
+		Error:    &Error{HTTPStatus: http.StatusTooManyRequests, Message: "quota"},
 	})
 
 	newAuth := &Auth{

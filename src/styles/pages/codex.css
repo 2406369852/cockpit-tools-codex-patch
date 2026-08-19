@@ -285,6 +285,14 @@
   flex-shrink: 0;
 }
 
+.codex-local-access-current-mode {
+  flex-shrink: 0;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
 .codex-local-access-title-mode-select .single-select-dropdown-trigger {
   min-height: 24px;
   padding: 0 3px 0 0;
@@ -3366,12 +3374,18 @@
   background: var(--danger);
 }
 
+.codex-quota-mini-bar.neutral {
+  background: color-mix(in srgb, var(--text-secondary) 42%, transparent);
+}
+
 .codex-quota-mini-pct {
   flex: 0 0 auto;
   min-width: 28px;
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .codex-quota-mini-pct.high {
@@ -3388,6 +3402,10 @@
 
 .codex-quota-mini-pct.critical {
   color: var(--danger);
+}
+
+.codex-quota-mini-pct.neutral {
+  color: var(--text-secondary);
 }
 
 .codex-quota-mini-reset {
@@ -4451,7 +4469,7 @@
 }
 
 .codex-accounts-page .codex-compact-email {
-  flex: 1;
+  width: 100%;
   min-width: 0;
   display: inline-flex;
   align-items: center;
@@ -4462,6 +4480,32 @@
   font-weight: 600;
   color: #1890ff;
   letter-spacing: 0.01em;
+}
+
+.codex-accounts-page .codex-compact-account-summary {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.codex-accounts-page .codex-compact-account-price,
+.codex-accounts-page .codex-account-price-inline {
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.codex-accounts-page .codex-compact-account-price strong,
+.codex-accounts-page .codex-account-price-inline strong {
+  margin-left: 3px;
+  color: var(--text-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .codex-accounts-page .codex-compact-quotas {
@@ -7998,7 +8042,8 @@
 }
 
 .codex-quick-config-modal {
-  width: min(600px, calc(100vw - 32px));
+  width: min(780px, calc(100vw - 32px));
+  max-width: min(780px, calc(100vw - 32px));
 }
 
 .codex-quick-config-modal .modal-body {

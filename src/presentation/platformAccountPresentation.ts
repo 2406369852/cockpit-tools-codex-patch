@@ -37,6 +37,7 @@ import {
   getCodexCodeReviewQuotaMetric,
   getCodexQuotaWindowLabel,
   getCodexEffectiveQuotaPercentages,
+  getCodexMonthlyCreditUsage,
   getCodexPlanBadgePresentation,
   getCodexQuotaClass,
   getCodexQuotaWindows,
@@ -794,6 +795,58 @@ export function buildCodexAccountPresentation(
               .join("\n"),
           };
         });
+  const monthlyCreditUsage = isCodexChatCompletionsApiKeyAccount(account)
+    ? null
+    : getCodexMonthlyCreditUsage(account.quota);
+  const monthlyCreditAmount =
+    monthlyCreditUsage?.remaining ??
+    Number.parseFloat(monthlyCreditUsage?.balance ?? "");
+  const hasMonthlyCredits =
+    monthlyCreditUsage != null &&
+    (monthlyCreditUsage.unlimited === true ||
+      (typeof monthlyCreditAmount === "number" &&
+        Number.isFinite(monthlyCreditAmount) &&
+        monthlyCreditAmount > 0));
+  if (hasMonthlyCredits) {
+    const total = monthlyCreditUsage.total;
+    const remaining = monthlyCreditUsage.remaining;
+    const percentage = monthlyCreditUsage.unlimited
+      ? 100
+      : monthlyCreditUsage.remainingPercent != null
+        ? monthlyCreditUsage.remainingPercent
+        : total != null && total > 0 && remaining != null
+          ? clampPercent((remaining / total) * 100)
+          : 0;
+    const amountText = monthlyCreditUsage.unlimited
+      ? t("codex.quota.unlimitedCredits", "∞")
+      : remaining != null
+        ? formatQuotaNumber(remaining)
+        : monthlyCreditUsage.balance
+          ? t("codex.quota.creditBalance", {
+              balance: monthlyCreditUsage.balance,
+              defaultValue: "{{balance}}",
+            })
+          : t("common.shared.quota.noData", "暂无配额数据");
+    quotaItems.push({
+      key: "monthly_credits",
+      label: t("codex.quota.monthlyCredits", "Credits"),
+      percentage,
+      quotaClass: "neutral",
+      valueText: t("codex.quota.monthlyCreditsInline", {
+        value: amountText,
+        defaultValue: "Credits：{{value}}",
+      }),
+      resetText: monthlyCreditUsage.resetTime
+        ? formatCodexResetTime(monthlyCreditUsage.resetTime, t)
+        : "",
+      resetAt: monthlyCreditUsage.resetTime,
+      used: monthlyCreditUsage.used,
+      total,
+      left: remaining,
+      hintText: t("codex.quota.monthlyCreditsHint", "本月 credits 剩余"),
+      showProgress: false,
+    });
+  }
   const additionalQuotaItems =
     !isCodexChatCompletionsApiKeyAccount(account)
       ? getCodexAdditionalQuotaWindows(account.quota).map((window) => {

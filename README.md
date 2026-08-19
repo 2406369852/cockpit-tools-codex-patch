@@ -1,6 +1,6 @@
 # Cockpit Tools Codex Patch
 
-> 基于 [Cockpit Tools](https://github.com/jlcodes99/cockpit-tools) `v1.3.21` 的非官方社区增强版，主要维护 Codex 本地 API、多账号调度和 Windows 热更新体验。
+> 基于 [Cockpit Tools](https://github.com/jlcodes99/cockpit-tools) `v1.3.23` 的非官方社区增强版，主要维护 Codex 本地 API、多账号调度、成本持久化和 Windows 热更新体验。
 
 本项目不是 OpenAI 官方产品，也不代表上游作者。上游的多平台账号管理能力仍然保留；本分支的重点变更记录在 [PATCH_NOTES.md](PATCH_NOTES.md)。
 
@@ -10,7 +10,8 @@
 
 - Codex 本地 OpenAI 兼容 API，支持 `/v1/responses`、`/v1/chat/completions`、图片生成和图片编辑。
 - `gpt-image-2` 图片能力识别；图片生成/编辑能力不可用时提供可操作提示，并按服务开关、账号能力和套餐状态显示或隐藏。
-- Codex 账号 `actual_spend_cny` 实际价格记录，支持批量填写以及导入/导出保留；界面同时显示本地 USD 估算和倍率。
+- Codex 账号 `actual_spend_cny` 实际价格记录，支持批量填写；价格同时写入加密账号详情和独立 `codex_account_billing.json`，升级、刷新、迁移后按账号 ID 自动恢复。
+- 网格、紧凑、列表三种账号布局都显示实际价格；API 服务页同时显示本地 USD 估算和倍率。
 - 429 快速处理：裸 429、缺少 `Retry-After` 或 `Retry-After: 0` 按配置立即重试；多账号自动轮转；单账号按配置继续重试；正数等待受最大间隔限制。
 - `quota_low_first` 低额度优先调度：有正额度账号优先，未知、耗尽或异常额度排后。
 - Sidecar 父进程租约与热更新交接：重启前复制临时 sidecar，新进程接管 API 后再替换安装版；失败时自动恢复，避免 EXE 文件锁和 API 长时间中断。
@@ -22,23 +23,23 @@
 
 请求链路和增强点如下：
 
-![Codex API 增强请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.png)
+![Codex API 增强请求链路](docs/images/codex-patch-flow.png)
 
 账号额度与多实例管理界面示例：
 
-![Codex 账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_list.png)
+![Codex 账号额度](docs/images/codex_list.png)
 
-![Codex 多实例](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_instances.png)
+![Codex 多实例](docs/images/codex_instances.png)
 
 实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
 
-![Codex 额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_accounts_quota_private-masked.png)
+![Codex 额度和成本字段](docs/images/codex_accounts_actual_price_v1.3.23_private-masked.png)
 
-![Codex API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_api_usage_private-masked.png)
+![Codex API 用量卡片](docs/images/codex_api_usage_v1.3.23_private-masked.png)
 
 ## Windows 安装
 
-在 [Releases](../../releases) 下载 `Cockpit.Tools_1.3.21_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。
+在 [Releases](../../releases) 下载 `Cockpit.Tools_1.3.23_x64-setup.exe`。当前安装包未进行代码签名，Windows SmartScreen 出现提示属于预期行为；请以 Release 页面公布的 SHA256 为准校验文件。
 
 这是 Windows 安装程序（`.exe`），不是压缩包：下载后直接双击安装，再从开始菜单或桌面启动。完整的安装、API 配置、图片使用和更新步骤见[中文使用说明](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/USAGE.zh-CN.md)。
 
@@ -60,7 +61,7 @@ http://127.0.0.1:<端口>/v1
 
 ## 成本统计口径
 
-“已用美元”是经过本地 API 服务的请求估算值；“实际价格”是用户手动填写的人民币价格；“倍率”用于本地成本对比。它不是 OpenAI 官方账单，也不代表官方结算价格。
+“已用美元”是经过本地 API 服务的请求估算值；“实际价格”是用户手动填写的人民币价格；“倍率”用于本地成本对比。它不是 OpenAI 官方账单，也不代表官方结算价格。独立映射文件位于 `%USERPROFILE%\.antigravity_cockpit\codex_account_billing.json`，只保存账号 ID 与人民币价格，不保存 Token；账号详情仍由应用加密保存。
 
 ## 从源码构建
 
@@ -70,7 +71,7 @@ http://127.0.0.1:<端口>/v1
 npm ci
 npm run typecheck
 $env:GOFLAGS = "-buildvcs=false"
-npm run tauri -- build -- --bundles nsis
+node scripts/tauri.cjs build --bundles nsis --no-sign --config src-tauri/tauri.ci.conf.json
 ```
 
 安装包输出到 `target/release/bundle/nsis/`。不要提交 `target/`、`node_modules/`、账号数据、token 或临时 handoff 文件。
@@ -79,6 +80,6 @@ npm run tauri -- build -- --bundles nsis
 
 请遵守 OpenAI 及各第三方平台的服务条款和当地法律。429 重试不保证最终成功；图片能力由上游账号和服务端决定；作者不对使用本项目造成的损失负责。
 
-本项目沿用上游的 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可：保留署名、仅限非商业用途、修改后采用相同方式共享。第三方组件以各自许可证为准，尤其是 `sidecars/cockpit-cliproxy/cdk/CLIProxyAPI/LICENSE` 中的 MIT 许可。
+本项目沿用上游的 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) 许可：保留署名、仅限非商业用途、修改后采用相同方式共享。第三方组件以各自许可证为准，尤其是 `sidecars/cockpit-cliproxy/third_party/CLIProxyAPI/LICENSE` 中的 MIT 许可。
 
 感谢上游 Cockpit Tools、CLIProxyAPI、openai/codex、Antigravity-Manager、sub2api、CC Switch、CodexPlusPlus 和 Electron 等项目。

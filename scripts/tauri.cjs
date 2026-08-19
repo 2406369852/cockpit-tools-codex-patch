@@ -344,7 +344,8 @@ function runWindowsTauri() {
   const rust = findRust();
   const vcvars64Path = findVcvars64();
   const tauriCliPath = path.join(repoRoot, 'node_modules', '.bin', 'tauri.cmd');
-  const tauriArgs = process.argv.slice(2).map(quoteBatchArg).join(' ');
+  const rawTauriArgs = process.argv.slice(2);
+  const tauriArgs = rawTauriArgs.map(quoteBatchArg).join(' ');
   const cargoBinPath = path.dirname(rust.cargoExecutable);
   const goBinPath = path.dirname(go.executable);
   const tauriCommand = fs.existsSync(tauriCliPath)
@@ -356,6 +357,26 @@ function runWindowsTauri() {
   console.log(`[build-env] MSVC: ${vcvars64Path}`);
 
   const tempScriptPath = path.join(os.tmpdir(), `cockpit-tools-tauri-${process.pid}.cmd`);
+  const releasePrivacyEnv = [];
+  if (!rawTauriArgs.includes('--debug')) {
+    const userProfile = process.env.USERPROFILE && path.resolve(process.env.USERPROFILE);
+    if (userProfile && !/\s/u.test(userProfile)) {
+      const rustPathMap = `--remap-path-prefix=${userProfile}=/build --remap-path-scope=all -Cdebuginfo=0 -Cstrip=symbols`;
+      const nativePathMap = `/experimental:deterministic /pathmap:${userProfile}=/build`;
+      releasePrivacyEnv.push(
+        'set "CARGO_PROFILE_RELEASE_DEBUG=0"',
+        'set "CARGO_PROFILE_RELEASE_STRIP=symbols"',
+        `set "RUSTFLAGS=${[process.env.RUSTFLAGS, rustPathMap].filter(Boolean).join(' ')}"`,
+        `set "CFLAGS=${[process.env.CFLAGS, nativePathMap].filter(Boolean).join(' ')}"`,
+        `set "CXXFLAGS=${[process.env.CXXFLAGS, nativePathMap].filter(Boolean).join(' ')}"`,
+        `set "AWS_LC_SYS_CFLAGS=${[process.env.AWS_LC_SYS_CFLAGS, nativePathMap].filter(Boolean).join(' ')}"`,
+      );
+    } else if (userProfile) {
+      console.warn(
+        '[build-env] USERPROFILE contains whitespace; set release path-remap flags explicitly.',
+      );
+    }
+  }
   const scriptBody = [
     '@echo off',
     'setlocal DisableDelayedExpansion',
@@ -365,6 +386,7 @@ function runWindowsTauri() {
     `set "GOROOT=${go.goroot}"`,
     `set "COCKPIT_GO=${go.executable}"`,
     `set "COCKPIT_CARGO=${rust.cargoExecutable}"`,
+    ...releasePrivacyEnv,
     'call npm.cmd run sync-version',
     'if errorlevel 1 exit /b %errorlevel%',
     tauriCommand,

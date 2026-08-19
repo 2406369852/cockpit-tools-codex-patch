@@ -4,6 +4,9 @@ on:
   push:
     tags:
       - "v*"
+      # Community patch releases are published manually because they are
+      # intentionally unsigned and do not ship Tauri updater manifests.
+      - "!v*-patch.*"
   workflow_dispatch:
 
 concurrency:

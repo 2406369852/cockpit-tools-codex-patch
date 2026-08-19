@@ -1,56 +1,39 @@
-# v1.3.21-patch.1
+# v1.3.23-patch.1
 
-这是基于 Cockpit Tools `v1.3.21` 的非官方 Codex API 增强版，面向 Windows x64。
+这是基于 Cockpit Tools `v1.3.23` 的非官方 Codex API 增强版，面向 Windows x64。
 
 ## 本次改动
 
-- 增加 `gpt-image-2` 图片生成/编辑能力识别和友好提示。
-- 增加账号 `actual_spend_cny` 成本字段、批量填写及导入/导出保留。
-- 增加本地 USD 估算、人民币实价和倍率展示。
-- 429、缺少 `Retry-After`、`Retry-After: 0` 走快速重试；多账号自动轮转，单账号按配置重试。
-- 增加 `quota_low_first` 低额度优先调度。
-- 增加 Sidecar 父进程租约、热交接和失败恢复，降低更新时 API 中断风险。
+- `gpt-image-2` 图片生成/编辑能力识别和可操作提示。
+- 429、缺少 `Retry-After`、`Retry-After: 0` 快速重试；多账号自动轮转，单账号按配置重试。
+- `quota_low_first` 低额度优先调度。
+- 实际价格同时写入加密账号详情与独立计费映射；覆盖安装、刷新、迁移后按账号 ID 自动恢复，不必每次升级重新填写。
+- 网格、紧凑、列表三种账号布局均显示实际价格；API 服务页展示已用美元、实际价格和倍率。
+- Sidecar 父进程租约、热交接和失败恢复；维护更新器额外检测 WebView2 localhost 拒绝连接页并自动回滚。
 - 不强制暴露 WM 实验模型。
 
-完整的图片+文字说明见 [`docs/FEATURE_GUIDE.zh-CN.md`](docs/FEATURE_GUIDE.zh-CN.md)。
+完整的图片与文字说明见 [`docs/FEATURE_GUIDE.zh-CN.md`](docs/FEATURE_GUIDE.zh-CN.md)。
 
 ## 图文预览
 
-请求链路、图片能力判断、429 重试和 Sidecar 热交接：
+实际价格、额度与倍率（邮箱、团队名、用户 ID 和接口地址均已打马赛克）：
 
-![请求链路](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex-patch-flow.png)
+![账号实际价格](docs/images/codex_accounts_actual_price_v1.3.23_private-masked.png)
 
-账号额度与成本统计界面：
-
-![账号额度](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_list.png)
-
-多实例账号管理界面：
-
-![多实例](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_instances.png)
-
-实际额度、用量、实际价格和倍率（敏感信息已打马赛克）：
-
-![额度和成本字段](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_accounts_quota_private-masked.png)
-
-![API 用量卡片](https://github.com/2406369852/cockpit-tools-codex-patch/releases/download/v1.3.21-patch.1/codex_api_usage_private-masked.png)
+![API 用量与成本](docs/images/codex_api_usage_v1.3.23_private-masked.png)
 
 ## Windows 下载
 
-文件：`Cockpit.Tools_1.3.21_x64-setup.exe`
+文件：`Cockpit.Tools_1.3.23_x64-setup.exe`
 
-这是 Windows 安装程序，不是压缩包。下载后直接双击安装；完整步骤见[中文使用说明](https://github.com/2406369852/cockpit-tools-codex-patch/blob/main/docs/USAGE.zh-CN.md)。
+这是 Windows 安装程序，不是压缩包。下载后直接双击安装；完整步骤见[中文使用说明](docs/USAGE.zh-CN.md)。
 
-SHA256：
-
-`7F0EA34199403485DCC2E6F33729FF29D93B44CC3AA09E1618EF5C7EB9C6BBB2`
-
-安装包未进行代码签名，Windows SmartScreen 可能显示未知发布者提示。图片权限、账号额度和上游限流仍由上游服务决定；本补丁不会绕过这些限制。
+SHA256 以 Release 附件 `SHA256SUMS.txt` 为准。安装包未进行代码签名，Windows SmartScreen 可能显示“未知发布者”；请先核对来源和 SHA256。图片权限、账号额度和上游限流仍由上游服务决定，本补丁不会绕过这些限制。
 
 ## 已验证
 
-- `cargo check`、`cargo fmt --check`
-- Rust 协议、parent lease、supported model 定向测试
-- Go auth、registry、OpenAI handler 定向测试
-- `npm run typecheck`、TypeScript 测试和 locale 检查
-
-上游基线中仍有 Windows 权限和 antigravity 签名相关测试失败；这些不属于本补丁新增改动。
+- 当前增强版实际启动，WebView2 页面可读且无 localhost 错误页。
+- 主程序与 Sidecar 正常运行，`/v1/models` 返回 HTTP 200。
+- `gpt-image-2` 可见，WM 模型未被强制暴露。
+- 三笔已保存价格在账号界面恢复并显示。
+- `npm run typecheck`、`npm run build`、Rust `cargo check` 和计费持久化单元测试通过。

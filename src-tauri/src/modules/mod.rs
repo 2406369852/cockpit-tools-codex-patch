@@ -23,6 +23,7 @@ pub mod codebuddy_session_transfer;
 pub mod codex_account;
 pub mod codex_agent_identity;
 pub mod codex_app_injection;
+pub mod codex_billing;
 pub mod codex_config_format;
 pub mod codex_instance;
 pub mod codex_local_access;

@@ -2476,13 +2476,13 @@ mod tests {
     #[test]
     fn build_payload_from_snapshot_supports_kiro_raw_json_shape() {
         let auth_token = json!({
-            "email": "test@example.com",
+            "email": "kiro-user-01@example.test",
             "accessToken": "test_access_token",
             "refreshToken": "test_refresh_token",
             "expiresAt": "2026/02/19 02:01:47",
             "provider": "Github",
             "userId": "user-123",
-            "profileArn": "arn:aws:codewhisperer:us-east-1:000000000000:profile/TESTPROFILE"
+            "profileArn": "arn:aws:codewhisperer:us-east-1:699475941385:profile/EHGA3GRVQMUK"
         });
         let usage = json!({
             "nextDateReset": 1772323200,
@@ -2502,7 +2502,7 @@ mod tests {
                 }
             ],
             "userInfo": {
-                "email": "test@example.com",
+                "email": "kiro-user-01@example.test",
                 "userId": "user-123"
             }
         });
@@ -2516,7 +2516,7 @@ mod tests {
                 .and_utc()
                 .timestamp();
 
-        assert_eq!(payload.email, "test@example.com");
+        assert_eq!(payload.email, "kiro-user-01@example.test");
         assert_eq!(payload.user_id.as_deref(), Some("user-123"));
         assert_eq!(payload.login_provider.as_deref(), Some("Github"));
         assert_eq!(payload.access_token, "test_access_token");
@@ -2565,7 +2565,7 @@ mod tests {
     fn idc_client_credentials_preserve_inline_and_saved_account_precedence() {
         let mut account: KiroAccount = serde_json::from_value(json!({
             "id": "kiro_test",
-            "email": "tester@example.com",
+            "email": "kiro-user-02@example.test",
             "access_token": "access",
             "created_at": 0,
             "last_used": 0
@@ -2606,7 +2606,7 @@ mod tests {
     fn should_prefer_idc_refresh_for_enterprise_account() {
         let account = KiroAccount {
             id: "kiro_test".to_string(),
-            email: "tester@example.com".to_string(),
+            email: "kiro-user-03@example.test".to_string(),
             user_id: None,
             login_provider: Some("Enterprise".to_string()),
             tags: None,

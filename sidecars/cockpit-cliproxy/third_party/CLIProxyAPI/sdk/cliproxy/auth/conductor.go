@@ -2276,6 +2276,9 @@ func (m *Manager) shouldRetryAfterError(err error, attempt int, providers []stri
 	if err == nil {
 		return 0, false
 	}
+	if maxWait <= 0 {
+		return 0, false
+	}
 	status := statusCodeFromError(err)
 	if status == http.StatusOK {
 		return 0, false
@@ -2283,14 +2286,12 @@ func (m *Manager) shouldRetryAfterError(err error, attempt int, providers []stri
 	if isRequestInvalidError(err) {
 		return 0, false
 	}
-	if maxWait > 0 {
-		wait, found := m.closestCooldownWait(providers, model, attempt)
-		if found {
-			if wait > maxWait {
-				return 0, false
-			}
-			return wait, true
+	wait, found := m.closestCooldownWait(providers, model, attempt)
+	if found {
+		if wait > maxWait {
+			return 0, false
 		}
+		return wait, true
 	}
 	if status != http.StatusTooManyRequests {
 		return 0, false
@@ -2299,12 +2300,7 @@ func (m *Manager) shouldRetryAfterError(err error, attempt int, providers []stri
 		return 0, false
 	}
 	retryAfter := retryAfterFromError(err)
-	if retryAfter == nil || *retryAfter <= 0 {
-		// Some upstreams return a bare 429 without Retry-After. Retry the
-		// request immediately instead of surfacing a transient rate limit.
-		return 0, true
-	}
-	if maxWait <= 0 || *retryAfter > maxWait {
+	if retryAfter == nil || *retryAfter <= 0 || *retryAfter > maxWait {
 		return 0, false
 	}
 	return *retryAfter, true
@@ -2414,25 +2410,30 @@ func (m *Manager) MarkResult(ctx context.Context, result Result) {
 								shouldSuspendModel = true
 							}
 						case 429:
-							if !disableCooling && result.RetryAfter != nil && *result.RetryAfter > 0 {
-								next := now.Add(*result.RetryAfter)
-								state.NextRetryAfter = next
-								state.Quota = QuotaState{
-									Exceeded:      true,
-									Reason:        "quota",
-									NextRecoverAt: next,
-									BackoffLevel:  state.Quota.BackoffLevel,
+							var next time.Time
+							backoffLevel := state.Quota.BackoffLevel
+							if !disableCooling {
+								if result.RetryAfter != nil {
+									next = now.Add(*result.RetryAfter)
+								} else {
+									cooldown, nextLevel := nextQuotaCooldown(backoffLevel, disableCooling)
+									if cooldown > 0 {
+										next = now.Add(cooldown)
+									}
+									backoffLevel = nextLevel
 								}
+							}
+							state.NextRetryAfter = next
+							state.Quota = QuotaState{
+								Exceeded:      true,
+								Reason:        "quota",
+								NextRecoverAt: next,
+								BackoffLevel:  backoffLevel,
+							}
+							if !disableCooling {
 								suspendReason = "quota"
 								shouldSuspendModel = true
 								setModelQuota = true
-							} else {
-								// A bare 429 is transient. Keep the model selectable so the
-								// configured retry loop can try it again immediately.
-								state.NextRetryAfter = time.Time{}
-								state.Quota = QuotaState{}
-								shouldResumeModel = true
-								clearModelQuota = true
 							}
 						case 408, 500, 502, 503, 504:
 							if disableCooling {
@@ -2938,16 +2939,22 @@ func applyAuthFailureState(auth *Auth, resultErr *Error, retryAfter *time.Durati
 		}
 	case 429:
 		auth.StatusMessage = "quota exhausted"
-		if !disableCooling && retryAfter != nil && *retryAfter > 0 {
-			next := now.Add(*retryAfter)
-			auth.Quota.Exceeded = true
-			auth.Quota.Reason = "quota"
-			auth.Quota.NextRecoverAt = next
-			auth.NextRetryAfter = next
-		} else {
-			auth.Quota = QuotaState{}
-			auth.NextRetryAfter = time.Time{}
+		auth.Quota.Exceeded = true
+		auth.Quota.Reason = "quota"
+		var next time.Time
+		if !disableCooling {
+			if retryAfter != nil {
+				next = now.Add(*retryAfter)
+			} else {
+				cooldown, nextLevel := nextQuotaCooldown(auth.Quota.BackoffLevel, disableCooling)
+				if cooldown > 0 {
+					next = now.Add(cooldown)
+				}
+				auth.Quota.BackoffLevel = nextLevel
+			}
 		}
+		auth.Quota.NextRecoverAt = next
+		auth.NextRetryAfter = next
 	case 408, 500, 502, 503, 504:
 		auth.StatusMessage = "transient upstream error"
 		if disableCooling {

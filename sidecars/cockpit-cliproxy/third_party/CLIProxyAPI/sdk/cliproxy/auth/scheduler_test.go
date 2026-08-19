@@ -522,14 +522,12 @@ func TestManager_SchedulerTracksMarkResultCooldownAndRecovery(t *testing.T) {
 		t.Fatalf("Register(auth-b) error = %v", errRegister)
 	}
 
-	retryAfter := time.Minute
 	manager.MarkResult(context.Background(), Result{
-		AuthID:     "auth-a",
-		Provider:   "gemini",
-		Model:      "test-model",
-		Success:    false,
-		Error:      &Error{HTTPStatus: 429, Message: "quota"},
-		RetryAfter: &retryAfter,
+		AuthID:   "auth-a",
+		Provider: "gemini",
+		Model:    "test-model",
+		Success:  false,
+		Error:    &Error{HTTPStatus: 429, Message: "quota"},
 	})
 
 	got, errPick := manager.scheduler.pickSingle(context.Background(), "gemini", "test-model", cliproxyexecutor.Options{}, nil)

@@ -4692,9 +4692,9 @@ mod tests {
     fn sample_account() -> TraeAccount {
         TraeAccount {
             id: "trae_test".to_string(),
-            email: "test@example.com".to_string(),
-            user_id: Some("test-user-id".to_string()),
-            nickname: Some("Test User".to_string()),
+            email: "trae-user-01@example.test".to_string(),
+            user_id: Some("7463021402682639361".to_string()),
+            nickname: Some("李杰".to_string()),
             tags: None,
             access_token: "old-access".to_string(),
             refresh_token: Some("old-refresh".to_string()),
@@ -4705,9 +4705,9 @@ mod tests {
             trae_auth_raw: None,
             trae_profile_raw: Some(serde_json::json!({
                 "Result": {
-                    "ScreenName": "Test User",
-                    "NonPlainTextEmail": "test@example.com",
-                    "UserID": "test-user-id",
+                    "ScreenName": "李杰",
+                    "NonPlainTextEmail": "trae-user-01@example.test",
+                    "UserID": "7463021402682639361",
                     "AvatarUrl": "https://example.com/avatar.png",
                     "Description": "",
                     "StoreCountry": "jp",
@@ -4738,7 +4738,7 @@ mod tests {
             "refreshExpiredAt": "2026-10-09T16:18:22.466Z",
             "tokenReleaseAt": "2026-04-12T16:18:25.030Z",
             "account": {
-                "username": "Test User"
+                "username": "李杰"
             }
         }));
 
@@ -4791,7 +4791,7 @@ mod tests {
                 .get("account")
                 .and_then(|value| value.get("username"))
                 .and_then(Value::as_str),
-            Some("Test User")
+            Some("李杰")
         );
     }
 
@@ -4885,7 +4885,7 @@ mod tests {
     #[test]
     fn platform_scoped_payload_identity_keeps_cn_and_global_accounts_separate() {
         let global_payload = TraeImportPayload {
-            email: "same@example.com".to_string(),
+            email: "trae-user-02@example.test".to_string(),
             user_id: Some("user-1".to_string()),
             nickname: None,
             access_token: "access-global".to_string(),
@@ -5059,7 +5059,7 @@ mod tests {
                 .get("account")
                 .and_then(|value| value.get("username"))
                 .and_then(Value::as_str),
-            Some("Test User")
+            Some("李杰")
         );
     }
 
